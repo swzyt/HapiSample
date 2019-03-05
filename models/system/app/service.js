@@ -3,7 +3,7 @@ var moment = require("moment");
 var Boom = require('boom');
 var Service = function (db) {
     this.db = db;
-    this.attributes = ['app_id', 'name', 'secret', 'description', 'created_at', 'updated_at'];
+    this.attributes = ['app_id', 'name', /* 'secret',  */'description', 'created_at', 'updated_at'];
 };
 
 Service.prototype.list = function (where, page_size, page_number, orderArr) {

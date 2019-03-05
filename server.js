@@ -15,6 +15,8 @@ module.exports = function (settings, bootstrap) {
 
     const reply_send = function (data) {
         if (data instanceof Object) {
+            data = JSON.stringify(data)
+            data = JSON.parse(data)
             if (data.hasOwnProperty('total') && data.hasOwnProperty('items')) {
                 return this.response({ code: 200, message: "OK", total: data.total, data: data.items });
             } else {
