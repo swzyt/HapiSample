@@ -8,7 +8,7 @@ module.exports = function (server, models) {
             method: 'GET',
             path: '/behavior/v2/behaviors',
             config: {
-                //auth: 'default',
+                auth: 'jwt',
                 tags: ['api'],
                 description: '分页方式获取用戶行为列表信息',
                 validate: models.behavior.behavior.validator.list.request,
@@ -21,7 +21,7 @@ module.exports = function (server, models) {
             method: 'POST',
             path: '/behavior/v2/behaviors',
             config: {
-                //auth: 'default',
+                auth: 'jwt',
                 tags: ['api'],
                 description: '创建新的用戶行为信息',
                 //validate: models.behavior.behavior.validator.create.request,
@@ -34,7 +34,7 @@ module.exports = function (server, models) {
             method: 'GET',
             path: '/behavior/v2/behaviors/{behavior_id}',
             config: {
-                //auth: 'default',
+                auth: false,
                 tags: ['api'],
                 description: '获取指定标识的用戶行为信息',
                 validate: models.behavior.behavior.validator.get.request,
@@ -47,7 +47,7 @@ module.exports = function (server, models) {
             method: 'PUT',
             path: '/behavior/v2/behaviors/{behavior_id}',
             config: {
-                //auth: 'default',
+                auth: 'jwt',
                 tags: ['api'],
                 description: '更新指定标识的用戶行为信息',
                 validate: models.behavior.behavior.validator.put.request,
@@ -60,7 +60,7 @@ module.exports = function (server, models) {
             method: 'DELETE',
             path: '/behavior/v2/behaviors/{behavior_id}',
             config: {
-                //auth: 'default',
+                auth: 'jwt',
                 tags: ['api'],
                 description: '删除指定标识的用戶行为信息',
                 validate: models.behavior.behavior.validator.delete.request,

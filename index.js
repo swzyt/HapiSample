@@ -5,7 +5,7 @@ const db = bootstrap.db;
 const models = bootstrap.models;
 const settings = bootstrap.settings;
 
-const Server = require('./server.js')(settings.server, bootstrap);
+const Server = require('./server.js')(settings, bootstrap);
 
 require("./routes")(Server, models, Server.oauth, db);
 

@@ -3,6 +3,10 @@
     "host": "localhost",
     "port": 3021
   },
+  "jwt": {
+    "secret": "1234567890",
+    "expire_times": 1800
+  },
   "mysql": {
     "database": "test",
     "username": "root",
