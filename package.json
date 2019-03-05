@@ -1,0 +1,30 @@
+{
+  "name": "hapsimple",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "dev": "NODE_ENV=development nodemon --ignore node_modules/ index",
+    "test": "NODE_ENV=test node index",
+    "production": "NODE_ENV=production node index",
+    "start": "node index"
+  },
+  "keywords": [],
+  "author": "Suwei",
+  "license": "ISC",
+  "dependencies": {
+    "boom": "^7.3.0",
+    "hapi": "^18.1.0",
+    "hapi-pino": "^5.4.1",
+    "hapi-swagger": "^9.3.1",
+    "inert": "^5.1.2",
+    "joi": "^14.3.1",
+    "mysql2": "^1.6.5",
+    "nconf": "^0.10.0",
+    "redis": "^2.8.0",
+    "sequelize": "^4.43.0",
+    "vision": "^5.4.4"
+  },
+  "devDependencies": {}
+}

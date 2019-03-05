@@ -1,0 +1,21 @@
+{
+  "server": {
+    "host": "localhost",
+    "port": 3021
+  },
+  "mysql": {
+    "database": "test",
+    "username": "root",
+    "password": "suwei",
+    "options": {
+      "host": "localhost",
+      "port": 3306,
+      "dialect": "mysql",
+      "pool": {
+        "max": 5,
+        "min": 0,
+        "idle": 10000
+      }
+    }
+  }
+}
