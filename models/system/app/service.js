@@ -38,7 +38,10 @@ Service.prototype.create = function (data) {
 Service.prototype.delete = function (where) {
 
     return this.db.SystemApp.findOne({ where: where }).then(function (item) {
-        return item.destroy();
+        if (item)
+            return item.destroy();
+        else
+            return Boom.notFound("找不到指定标识的数据")
     });
 };
 

@@ -23,7 +23,7 @@ module.exports = function (sequelize, DataTypes) {
       comment: "描述"
     }
   }, {
-      tableName: 'system_app',
+      tableName: 'system_apps',
       timestamps: true,//自动添加时间戳createAt，updateAt
       underscored: true,
       classMethods: {

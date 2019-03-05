@@ -5,36 +5,20 @@ var Status = {
     500: Joi.string().max(50).required().description('内部服务器错误')
 };
 
-const PREFIX = "Behavior";
+const PREFIX = "User";
 
 var RequestModel = {
-    behavior_id: Joi.string().optional().description('行为标识'),
-    action: Joi.string().max(100).allow(['', null]).description('行为动作类型'),
-    ip_address: Joi.string().max(100).allow(['', null]).description('ip地址'),
+    user_id: Joi.string().optional().description('用户标识'),
+    name: Joi.string().max(100).allow(['', null]).description('用户名称'),
     description: Joi.string().allow(['', null]).description('描述'),
-    lat: Joi.number().allow(['', null]).description('纬度'),
-    lng: Joi.number().allow(['', null]).description('经度'),
-    operator_type: Joi.string().max(100).allow(['', null]).description('操作类型'),
-    operator_id: Joi.string().max(100).allow(['', null]).description('操作标识'),
-    business_type: Joi.string().max(100).allow(['', null]).description('业务类型'),
-    business_id: Joi.string().max(100).allow(['', null]).description('业务标识')
 };
 
 var ResponseModel = {
-    behavior_id: Joi.string().required().description('行为标识'),
-    action: Joi.string().max(100).allow(['', null]).description('行为动作类型'),
-    ip_address: Joi.string().max(100).allow(['', null]).description('ip地址'),
+    user_id: Joi.string().required().description('用户标识'),
+    name: Joi.string().max(100).allow(['', null]).description('用户名称'),
     description: Joi.string().allow(['', null]).description('描述'),
-    lat: Joi.number().allow(['', null]).description('纬度'),
-    lng: Joi.number().allow(['', null]).description('经度'),
-    operator_type: Joi.string().max(100).allow(['', null]).description('操作类型'),
-    operator_id: Joi.string().max(100).allow(['', null]).description('操作标识'),
-    business_type: Joi.string().max(100).allow(['', null]).description('业务类型'),
-    business_id: Joi.string().max(100).allow(['', null]).description('业务标识'),
     created_at: Joi.date().description('创建时间'),
-    updated_at: Joi.date().description('更新时间'),
-    create_user_name: Joi.string().allow(['', null]).description('创建者显示名'),
-    update_user_name: Joi.string().allow(['', null]).description('修改者显示名')
+    updated_at: Joi.date().description('更新时间')
 };
 
 module.exports = {
@@ -42,7 +26,7 @@ module.exports = {
     get: {
         request: {
             params: {
-                behavior_id: Joi.string().required().description('行为标识')
+                user_id: Joi.string().required().description('用户标识')
             }
         },
         response: {
@@ -61,12 +45,8 @@ module.exports = {
     list: {
         request: {
             query: {
-                action: Joi.string().allow(['', null]).description('操作类型'),
-                operator_type: Joi.string().allow(['', null]).description('操作对象类型'),
-                operator_id: Joi.string().allow(['', null]).description('操作对象标识'),
-                business_type: Joi.string().allow(['', null]).description('业务类型'),
-                business_id: Joi.string().allow(['', null]).description('业务标识'),
-                keyword: Joi.string().allow(['', null]).description('关键字'),
+                name: Joi.string().allow(['', null]).description('操作类型'),
+                description: Joi.string().allow(['', null]).description('描述'),
                 page_size: Joi.number().integer().min(0).default(10).description('分页大小'),
                 page_number: Joi.number().integer().min(0).default(1).description('分页页号'),
             }
@@ -99,7 +79,7 @@ module.exports = {
     put: {
         request: {
             params: {
-                behavior_id: Joi.string().required().description('行为标识')
+                user_id: Joi.string().required().description('用户标识')
             },
             payload: Joi.object(RequestModel).meta({ className: PREFIX + 'PutRequest' })
         },
@@ -115,7 +95,7 @@ module.exports = {
     delete: {
         request: {
             params: {
-                behavior_id: Joi.string().required().description('行为标识')
+                user_id: Joi.string().required().description('用户标识')
             }
         },
         response: {

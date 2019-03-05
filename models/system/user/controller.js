@@ -17,7 +17,7 @@ Controller.prototype.list = function (request, h) {
 
 Controller.prototype.get = function (request, h) {
 
-    var where = { behavior_id: request.params.behavior_id };
+    var where = { user_id: request.params.user_id };
 
     return this.service.get(where).then(function (row) {
 
@@ -33,28 +33,32 @@ Controller.prototype.get = function (request, h) {
 
 Controller.prototype.create = function (request, h) {
 
-    return this.service.create(request.payload).then(function (result) {
-        return h.success();
-    }).catch(function (err) {
-        return h(err.message);
-    })
+    if (request.payload && JSON.stringify(request.payload) != "{}") {
+        return this.service.create(request.payload).then(function (result) {
+            return h.success();
+        }).catch(function (err) {
+            return h.error(Boom.badImplementation(err.message, err));
+        })
+    }
+    else {
+        return h.error(Boom.badImplementation("消息体不能为空"));
+    }
 };
 
 Controller.prototype.delete = function (request, h) {
 
-    var where = { behavior_id: request.params.behavior_id };
+    var where = { user_id: request.params.user_id };
 
     return this.service.delete(where).then(function (row) {
         return h.success();
     }).catch(function (err) {
-
         return h.error(Boom.badImplementation(err.message, err));
     })
 };
 
 Controller.prototype.update = function (request, h) {
 
-    var where = { behavior_id: request.params.behavior_id };
+    var where = { user_id: request.params.user_id };
 
     return this.service.update(where, request.payload).then(function (result) {
         return h.success();

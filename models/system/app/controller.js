@@ -33,11 +33,16 @@ Controller.prototype.get = function (request, h) {
 
 Controller.prototype.create = function (request, h) {
 
-    return this.service.create(request.payload).then(function (result) {
-        return h.success();
-    }).catch(function (err) {
-        return h(err.message);
-    })
+    if (request.payload && JSON.stringify(request.payload) != "{}") {
+        return this.service.create(request.payload).then(function (result) {
+            return h.success();
+        }).catch(function (err) {
+            return h(err.message);
+        })
+    }
+    else {
+        return h.error(Boom.badImplementation("消息体不能为空"));
+    }
 };
 
 Controller.prototype.delete = function (request, h) {

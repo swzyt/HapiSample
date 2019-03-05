@@ -1,8 +1,9 @@
 var _ = require('lodash');
 var moment = require("moment");
+var Boom = require('boom');
 var Service = function (db) {
     this.db = db;
-    this.attributes = ['behavior_id', 'action', 'ip_address', 'description', 'lat', 'lng', 'operator_type', 'operator_id', 'business_type', 'business_name', 'SESSION_ID', 'created_at', 'updated_at', 'create_user_name', 'update_user_name'];
+    this.attributes = ['user_id', 'name', 'description', 'created_at', 'updated_at'];
 };
 
 Service.prototype.list = function (where, page_size, page_number, orderArr) {
@@ -17,7 +18,7 @@ Service.prototype.list = function (where, page_size, page_number, orderArr) {
         options.limit = page_size;
         options.offset = page_size * (page_number - 1);
     }
-    return this.db.Behavior.findAndCountAll(options)
+    return this.db.SystemUser.findAndCountAll(options)
 };
 
 Service.prototype.get = function (where) {
@@ -27,25 +28,28 @@ Service.prototype.get = function (where) {
         attributes: this.attributes
     };
 
-    return this.db.Behavior.findOne(option);
+    return this.db.SystemUser.findOne(option);
 };
 
 Service.prototype.create = function (data) {
 
     var self = this;
 
-    return self.db.Behavior.build(data).save();
+    return self.db.SystemUser.build(data).save();
 };
 
 Service.prototype.delete = function (where) {
 
-    return this.db.Behavior.findOne({ where: where }).then(function (item) {
-        return item.destroy();
+    return this.db.SystemUser.findOne({ where: where }).then(function (item) {
+        if (item)
+            return item.destroy();
+        else
+            return Boom.notFound("找不到指定标识的数据")
     });
 };
 
 Service.prototype.update = function (where, data) {
-    return this.db.Behavior.update(data, { where: where });
+    return this.db.SystemUser.update(data, { where: where });
 };
 
 module.exports = Service;

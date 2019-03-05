@@ -6,7 +6,7 @@ module.exports = function (server, models) {
     server.route([
         {
             method: 'GET',
-            path: '/system/app',
+            path: '/system/apps',
             config: {
                 auth: 'jwt',
                 tags: ['api'],
@@ -19,7 +19,7 @@ module.exports = function (server, models) {
         },
         {
             method: 'POST',
-            path: '/system/app',
+            path: '/system/apps',
             config: {
                 auth: 'jwt',
                 tags: ['api'],
@@ -32,7 +32,7 @@ module.exports = function (server, models) {
         },
         {
             method: 'GET',
-            path: '/system/app/{app_id}',
+            path: '/system/apps/{app_id}',
             config: {
                 auth: 'jwt',
                 tags: ['api'],
@@ -45,7 +45,7 @@ module.exports = function (server, models) {
         },
         {
             method: 'PUT',
-            path: '/system/app/{app_id}',
+            path: '/system/apps/{app_id}',
             config: {
                 auth: 'jwt',
                 tags: ['api'],
@@ -58,7 +58,7 @@ module.exports = function (server, models) {
         },
         {
             method: 'DELETE',
-            path: '/system/app/{app_id}',
+            path: '/system/apps/{app_id}',
             config: {
                 auth: 'jwt',
                 tags: ['api'],
