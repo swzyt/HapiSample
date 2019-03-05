@@ -8,8 +8,8 @@ Controller.prototype.list = function (request, h) {
 
     var where = {};
 
-    return this.service.list(where, request.query.page_size, request.query.page_number).then(function (list) {
-        return h.success({ total: list.count, data: list.rows });
+    return this.service.list(where, request.query.page_size, request.query.page_number, [['created_at', 'desc']]).then(function (list) {
+        return h.success({ total: list.count, items: list.rows });
     }).catch(function (err) {
         return h.error(Boom.badRequest(err.message, err));
     })
@@ -37,7 +37,7 @@ Controller.prototype.create = function (request, h) {
         return this.service.create(request.payload).then(function (result) {
             return h.success();
         }).catch(function (err) {
-            return h(err.message);
+            return h.error(Boom.badImplementation(err.message, err));
         })
     }
     else {
@@ -52,7 +52,6 @@ Controller.prototype.delete = function (request, h) {
     return this.service.delete(where).then(function (row) {
         return h.success();
     }).catch(function (err) {
-
         return h.error(Boom.badImplementation(err.message, err));
     })
 };

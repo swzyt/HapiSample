@@ -1,3 +1,6 @@
+var _ = require('lodash');
+var moment = require("moment");
+var Boom = require('boom');
 var Service = function (db) {
     this.db = db;
     this.attributes = ['app_id', 'name', 'secret', 'description', 'created_at', 'updated_at'];
@@ -8,7 +11,7 @@ Service.prototype.list = function (where, page_size, page_number, orderArr) {
     var options = {
         attributes: this.attributes,
         where: where,
-        order: orderArr || [['updated_at', 'desc']]
+        order: orderArr
     };
     //如果分页参数中有一个等于0, 则获取全部数据
     if (page_size > 0 && page_number > 0) {

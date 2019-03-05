@@ -47,7 +47,7 @@ module.exports = function (settings, bootstrap) {
                 lang: "zh-cn",//中文显示
                 tags: [
                     { "name": "jwt", "description": "JSON WEB TOKEN" },//此处配置各模块描述内容
-                    { "name": "behavior", "description": "用户行为" }
+                    { "name": "system", "description": "系统设置" }
                 ],
                 info: {
                     title: 'HapiSimple 接口文档',

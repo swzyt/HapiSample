@@ -25,7 +25,7 @@ module.exports = function (server, models) {
                 tags: ['api'],
                 description: '创建新的应用信息',
                 validate: models.system.app.validator.create.request,
-                notes: '创建新的应用信息',
+                notes: 'My route notes',
                 response: models.system.app.validator.create.response,
                 handler: models.system.app.controller.create
             }
@@ -51,7 +51,7 @@ module.exports = function (server, models) {
                 tags: ['api'],
                 description: '更新指定标识的应用信息',
                 validate: models.system.app.validator.put.request,
-                notes: '更新指定标识的应用信息',
+                notes: 'My route notes',
                 response: models.system.app.validator.put.response,
                 handler: models.system.app.controller.update
             }
@@ -64,7 +64,7 @@ module.exports = function (server, models) {
                 tags: ['api'],
                 description: '删除指定标识的应用信息',
                 validate: models.system.app.validator.delete.request,
-                notes: '删除指定标识的应用信息',
+                notes: 'My route notes',
                 response: models.system.app.validator.delete.response,
                 handler: models.system.app.controller.delete
             }
