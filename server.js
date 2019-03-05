@@ -15,8 +15,9 @@ module.exports = function (settings, bootstrap) {
 
     const reply_send = function (data) {
         if (data instanceof Object) {
-            data = JSON.stringify(data)
-            data = JSON.parse(data)
+
+            data = JSON.parse(JSON.stringify(data))
+
             if (data.hasOwnProperty('total') && data.hasOwnProperty('items')) {
                 return this.response({ code: 200, message: "OK", total: data.total, data: data.items });
             } else {
@@ -31,7 +32,7 @@ module.exports = function (settings, bootstrap) {
     };
 
     const reply_error = function (boom) {
-        return this.response({ code: boom.output.statusCode, message: boom.output.payload.message }).code(boom.output.statusCode);
+        return this.response({ code: boom.output.statusCode, message: boom.message || boom.output.payload.message }).code(boom.output.statusCode);
     };
 
     //增加扩展方法

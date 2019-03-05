@@ -27,7 +27,7 @@ Controller.prototype.get = function (request, h) {
         return h.success(item);
 
     }).catch(function (err) {
-        return h.error(Boom.badImplementation(err.message, err));
+        return h.error(Boom.badRequest(err.message, err));
     })
 };
 
@@ -37,11 +37,11 @@ Controller.prototype.create = function (request, h) {
         return this.service.create(request.payload).then(function (result) {
             return h.success();
         }).catch(function (err) {
-            return h.error(Boom.badImplementation(err.message, err));
+            return h.error(Boom.badRequest(err.message, err));
         })
     }
     else {
-        return h.error(Boom.badImplementation("消息体不能为空"));
+        return h.error(Boom.badRequest("消息体不能为空"));
     }
 };
 
@@ -52,7 +52,7 @@ Controller.prototype.delete = function (request, h) {
     return this.service.delete(where).then(function (row) {
         return h.success();
     }).catch(function (err) {
-        return h.error(Boom.badImplementation(err.message, err));
+        return h.error(Boom.badRequest(err.message, err));
     })
 };
 
@@ -63,7 +63,7 @@ Controller.prototype.update = function (request, h) {
     return this.service.update(where, request.payload).then(function (result) {
         return h.success();
     }).catch(function (err) {
-        return h.error(Boom.badImplementation(err.message, err));
+        return h.error(Boom.badRequest(err.message, err));
     })
 };
 
