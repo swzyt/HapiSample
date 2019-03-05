@@ -4,3 +4,5 @@ node_modules
 
 # 旧代码
 OldCode
+
+package-lock.json
