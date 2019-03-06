@@ -1,4 +1,6 @@
 const Hapi = require('hapi');
+const _ = require('lodash');
+const api_log_server = require("./libs/logs/api_log");
 
 module.exports = function (settings, bootstrap) {
 
@@ -66,14 +68,7 @@ module.exports = function (settings, bootstrap) {
                 security: [{ 'jwt': [] }],
                 auth: false
             }
-        },/* {
-            plugin: require('hapi-pino'),
-            options: {
-                prettyPrint: true, // 格式化输出
-                //prettyPrint: false,
-                logEvents: ['response']
-            }
-        } */
+        }
     ]
     Server.register(pluginsArray);
 
@@ -96,40 +91,57 @@ module.exports = function (settings, bootstrap) {
     Server.auth.default('jwt');
 
     //生命周期事件
+
+    /**
+     * 检测是否记录请求日志，需开启记录日志配置，且排除部分路径
+     * @param {*} request 请求对象
+     */
+    function common_check(request) {
+        return settings.api_logging && !request.path.startsWith("/swagger") && !request.path.startsWith("/documentation")
+    }
     Server.ext('onRequest', function (request, h) {
-        console.log('onRequest')
         request.headers['c-req-start'] = (new Date()).getTime();//设置请求开始时间
+
+        if (common_check(request)) {
+            console.log('onRequest')
+        }
 
         return h.continue;
     });
 
     Server.ext('onPostAuth', function (request, h) {
-        console.log('onPostAuth')
-
+        if (common_check(request)) {
+            console.log('onPostAuth')
+        }
         return h.continue;
-        //return h.error(Boom.badData("非法请求"));
     });
 
     Server.ext('onPreResponse', function (request, h) {
-        console.log('onPreResponse')
         var start = parseInt(request.headers['c-req-start']);
         var end = (new Date()).getTime();
 
-        const response = request.response;
+        if (request.response.headers) {
+            request.response.headers['c-api-version'] = "1.0.0";
+            request.response.headers['c-req-id'] = request.id;
+            request.response.headers['c-req-start'] = start;
+            request.response.headers['c-res-end'] = end;
+            request.response.headers['c-req-res-time'] = end - start;
+        }
 
-        if (response.headers) {
-            response.headers['c-api-version'] = "1.0.0";
-            response.headers['c-req-id'] = request.id;
-            response.headers['c-req-start'] = start;
-            response.headers['c-res-end'] = end;
-            response.headers['c-req-res-time'] = end - start;
+        if (common_check(request)) {
+            console.log('onPreResponse')
+
+            //此处记录日志
+            api_log_server.insertOne(request)
         }
 
         return h.continue;
     });
 
     Server.ext('onPreHandler', function (request, h) {
-        console.log('onPreHandler')
+        if (common_check(request)) {
+            console.log('onPreHandler')
+        }
         return h.continue;
     });
 
