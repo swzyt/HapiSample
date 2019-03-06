@@ -13,14 +13,14 @@ module.exports = function (sequelize, DataTypes) {
             defaultValue: "",
             comment: '应用标识id'
         },
-        created_time: {
+        /* created_at: {
             type: DataTypes.DATE(),
             defaultValue: Sequelize.NOW,
             comment: '创建时间',
             get() {
                 return moment(this.getDataValue('created_time')).format('YYYY-MM-DD HH:mm:ss');
             }
-        },
+        }, */
         create_user_id: {
             type: DataTypes.STRING(100),
             defaultValue: "",
@@ -31,14 +31,14 @@ module.exports = function (sequelize, DataTypes) {
             defaultValue: "",
             comment: '创建者显示名'
         },
-        updated_time: {
+        /* updated_at: {
             type: DataTypes.DATE(),
             defaultValue: Sequelize.NOW,
             comment: '修改时间',
             get() {
                 return moment(this.getDataValue('updated_time')).format('YYYY-MM-DD HH:mm:ss');
             }
-        },
+        }, */
         updated_user_id: {
             type: DataTypes.STRING(100),
             defaultValue: "",

@@ -122,7 +122,7 @@ module.exports = function (settings, bootstrap) {
 
         if (request.response.headers) {
             request.response.headers['c-api-version'] = "1.0.0";
-            request.response.headers['c-req-id'] = request.id;
+            request.response.headers['c-req-id'] = request.info.id;
             request.response.headers['c-req-start'] = start;
             request.response.headers['c-res-end'] = end;
             request.response.headers['c-req-res-time'] = end - start;

@@ -50,14 +50,14 @@ exports.insertOne = function (request, callback) {
         }
     }
 
-    if (request.response.isBoom && request.response.output) {
+    if (request.response.isBoom && request.response.name && request.response.message) {
         item.response.headers = item.response.headers || (request.response.output.headers || undefined)
 
         if (_.isInteger(request.response.output.statusCode))
             item.response.code = request.response.output.statusCode;
 
-        if (_.isObject(request.response.output.payload) && _.isString(request.response.output.payload.error) && _.isString(request.response.output.payload.message))
-            item.response.message = request.response.output.payload.error + ' - ' + request.response.output.payload.message;
+        if (_.isString(request.response.name) && _.isString(request.response.message))
+            item.response.message = request.response.name + ' - ' + request.response.message;
     }
 
     if (_.isObject(request.filter)) {

@@ -35,7 +35,7 @@ module.exports = function (server, models, oauth, db) {
                     let app_id = request.query.app_id;
                     let app_secret = request.query.app_secret;
 
-                    //TODO:此处验证账户id和secret是否有效
+                    //此处验证账户id和secret是否正确
                     var option = {
                         where: {
                             app_id: app_id,
