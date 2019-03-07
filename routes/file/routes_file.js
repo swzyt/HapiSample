@@ -163,7 +163,7 @@ module.exports = function (server, models) {
 
                             var data = fs.readFileSync(file_path)
 
-                            mongodb.findOne(settings.mongodb.dbname, settings.mongodb.tableName_upload_file+".files", { filename: file_name }, (err, file_attr) => {
+                            mongodb.findOne(settings.mongodb.dbname, `${settings.mongodb.tableName_upload_file}.files`, { filename: file_name }, (err, file_attr) => {
                                 if (err || !file_attr) return reject(h.error(Boom.badRequest("获取文件失败")));
 
                                 //读取完成后，删除本地文件

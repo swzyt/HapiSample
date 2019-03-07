@@ -12,18 +12,20 @@
   },
   "keywords": [
     "Hapi",
+    "node.js",
     "demo",
     "simple",
     "framework",
     "框架",
-    "node.js"
+    "mongodb",
+    "gridfs",
+    "redis",
+    "文件服务"
   ],
   "author": "Suwei",
   "license": "ISC",
   "dependencies": {
-    "aguid": "^2.0.0",
     "boom": "^7.3.0",
-    "gridfs-stream": "^1.1.1",
     "guid": "0.0.12",
     "hapi": "^18.1.0",
     "hapi-auth-jwt2": "^8.3.0",
@@ -33,16 +35,12 @@
     "jsonwebtoken": "^8.5.0",
     "lodash": "^4.17.11",
     "moment": "^2.24.0",
-    "mongo-gridfs-storage": "^2.0.0",
     "mongodb": "^3.1.13",
-    "mongoose": "^5.4.17",
-    "mongoose-gridfs": "^0.6.2",
     "multiparty": "^4.2.1",
     "mysql2": "^1.6.5",
     "nconf": "^0.10.0",
     "redis": "^2.8.0",
     "sequelize": "^4.43.0",
-    "util": "^0.11.1",
     "vision": "^5.4.4"
   },
   "devDependencies": {}
