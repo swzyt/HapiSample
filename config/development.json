@@ -28,6 +28,12 @@
       }
     }
   },
+  "mongodb": {
+    "url": "mongodb://localhost:27017",
+    "dbname": "hapiSimple",
+    "tableName_api_log": "api_log",
+    "tableName_upload_file": "upload_file"
+  },
   "mongndb_url": "mongodb://localhost:27017",
   "api_logging": true
 }

@@ -34,7 +34,7 @@ module.exports = function (settings, bootstrap) {
     };
 
     const reply_error = function (boom) {
-        return this.response({ code: boom.output.statusCode, message: boom.message || boom.output.payload.message }).code(boom.output.statusCode);
+        return this.response({ code: boom.output.statusCode || 500, message: boom.message || boom.output.payload.message }).code(boom.output.statusCode || 500);
     };
 
     //增加扩展方法
@@ -51,8 +51,9 @@ module.exports = function (settings, bootstrap) {
             options: {
                 lang: "zh-cn",//中文显示
                 tags: [
-                    { "name": "jwt", "description": "JSON WEB TOKEN" },//此处配置各模块描述内容
-                    { "name": "system", "description": "系统设置" }
+                    { "name": "jwt", "description": "json web token" },//此处配置各模块描述内容
+                    { "name": "system", "description": "系统设置" },
+                    { "name": "storage", "description": "文件服务" }
                 ],
                 info: {
                     title: 'HapiSimple 接口文档',
@@ -132,7 +133,9 @@ module.exports = function (settings, bootstrap) {
             console.log('onPreResponse')
 
             //此处记录日志
-            api_log_server.insertOne(request)
+            api_log_server.insertOne(request, (err) => {
+                //console.log(err)
+            })
         }
 
         return h.continue;
