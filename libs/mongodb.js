@@ -40,7 +40,7 @@ exports.insertOne = function (dbname, collectionname, json, callback) {
     })
 }
 
-exports.insertFile = function (dbname, file_temp_path, file_new_name, options, callback) {
+exports.insertFile = function (dbname, file_temp_path, file_name, options, callback) {
     connectDb(function (db) {
         const DB = db.db(dbname);
 
@@ -49,7 +49,7 @@ exports.insertFile = function (dbname, file_temp_path, file_new_name, options, c
         });
 
         fs.createReadStream(file_temp_path).
-            pipe(bucket.openUploadStream(file_new_name, options)).
+            pipe(bucket.openUploadStream(file_name, options)).
             on('error', function (error) {
                 callback(error)
             }).
@@ -60,21 +60,27 @@ exports.insertFile = function (dbname, file_temp_path, file_new_name, options, c
     })
 }
 
-exports.downloadFile = function (dbname, file_new_name, callback) {
+exports.downloadFile = function (dbname, file_name, callback) {
+    let self = this;
     connectDb(function (db) {
         const DB = db.db(dbname);
 
-        var bucket = new mongodb.GridFSBucket(DB, {
-            chunkSizeBytes: 1024,
-            bucketName: settings.mongodb.tableName_upload_file
-        });
-        bucket.openDownloadStreamByName(file_new_name).
-            pipe(fs.createWriteStream(`./static/mongo_file/${file_new_name}`)).
-            on('error', function (error) {
-                callback(error)
-            }).
-            on('finish', function () {
-                callback()
+        self.findOne(settings.mongodb.dbname, `${settings.mongodb.tableName_upload_file}.files`, { filename: file_name }, (err, file_attr) => {
+            if (err || !file_attr) return callback("获取文件失败");
+
+            var bucket = new mongodb.GridFSBucket(DB, {
+                chunkSizeBytes: 1024,
+                bucketName: settings.mongodb.tableName_upload_file
             });
+            bucket.openDownloadStreamByName(file_name).
+                pipe(fs.createWriteStream(`./static/mongo_file/${file_name}`)).
+                on('error', function (error) {
+                    return callback(error)
+                }).
+                on('finish', function () {
+                    return callback(undefined, file_attr)
+                });
+        });
+
     })
 }

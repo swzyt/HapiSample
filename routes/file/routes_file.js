@@ -156,28 +156,24 @@ module.exports = function (server, models) {
 
                     return new Promise((resolve, reject) => {
                         //读取文件并返回
-                        mongodb.downloadFile(settings.mongodb.dbname, file_name, (err) => {
-                            if (err) return reject(h.error(Boom.badRequest("获取文件失败")));
+                        mongodb.downloadFile(settings.mongodb.dbname, file_name, (err, file_attr) => {
+                            if (err || !file_attr) return reject(Boom.badRequest("获取文件失败"));
 
                             let file_path = path.join(__dirname, "../../static/mongo_file/" + file_name)
 
                             var data = fs.readFileSync(file_path)
 
-                            mongodb.findOne(settings.mongodb.dbname, `${settings.mongodb.tableName_upload_file}.files`, { filename: file_name }, (err, file_attr) => {
-                                if (err || !file_attr) return reject(h.error(Boom.badRequest("获取文件失败")));
+                            //读取完成后，删除本地文件
+                            if (fs.existsSync(file_path)) {
+                                fs.unlinkSync(file_path);
+                            }
 
-                                //读取完成后，删除本地文件
-                                if (fs.existsSync(file_path)) {
-                                    fs.unlinkSync(file_path);
-                                }
-
-                                return resolve(
-                                    h.response(data)
-                                        .type(file_attr.contentType)
-                                        .header('Cache-Control', 'public, max-age=86400, no-transform')
-                                        .header('filename', file_attr.metadata.filename)
-                                );
-                            })
+                            return resolve(
+                                h.response(data)
+                                    .type(file_attr.contentType)
+                                    .header('Cache-Control', 'public, max-age=86400, no-transform')
+                                    //.header('filename', file_attr.metadata.filename)
+                            );
                         })
                     })
 

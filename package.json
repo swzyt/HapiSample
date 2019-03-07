@@ -22,7 +22,7 @@
     "redis",
     "文件服务"
   ],
-  "author": "Suwei",
+  "author": "suw",
   "license": "ISC",
   "dependencies": {
     "boom": "^7.3.0",
