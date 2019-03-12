@@ -1,7 +1,7 @@
 var redis       = require("redis");
 
 var bluebird    = require("bluebird");
-
+/**Promise化redis, 方法后添加async调用redis命令 */
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
 
