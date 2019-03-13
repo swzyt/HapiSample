@@ -25,6 +25,7 @@
   "author": "suw",
   "license": "ISC",
   "dependencies": {
+    "amqplib": "^0.5.3",
     "boom": "^7.3.0",
     "guid": "0.0.12",
     "hapi": "^18.1.0",
@@ -41,7 +42,8 @@
     "nconf": "^0.10.0",
     "redis": "^2.8.0",
     "sequelize": "^4.43.0",
-    "vision": "^5.4.4"
+    "vision": "^5.4.4",
+    "when": "^3.7.8"
   },
   "devDependencies": {}
 }
