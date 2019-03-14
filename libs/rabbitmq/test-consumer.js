@@ -2,7 +2,7 @@
  * 消费者，可多开测试
  */
 var RabbitMQ = require("./RabbitMQ");
-let mq = new RabbitMQ();
+let mq = new RabbitMQ(undefined, { xxx: 1, prefetch_count: 20 });
 
 var quene_name = 'task_queue';
 

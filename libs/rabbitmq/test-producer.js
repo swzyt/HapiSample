@@ -8,12 +8,12 @@ let mq = new RabbitMQ();
 var quene_name = 'task_queue', msg = "";
 
 //批量发送数据测试
-let count = 100;
+let count = 500;
 for (let i = 1; i <= count; i++) {
     setTimeout(() => {
         msg = '' + i;
         mq.sendQueueMsg(quene_name, msg, function (result) {
             console.log(` [${i}] 已发送 Result: ${result}`);
         })
-    }, i * 500)
+    }, i * 100)
 }
