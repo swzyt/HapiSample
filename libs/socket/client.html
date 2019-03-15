@@ -1,0 +1,202 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta http-equiv='content-type' content='text/html; charset=utf-8' />
+    <style>
+        .msg_wrapper {
+            width: 800px;
+        }
+
+        .msg_item {
+            /* width: 200px; */
+            border-bottom: 1px dotted #333;
+        }
+
+        .msg_item.msgtype_from {
+            text-align: left;
+        }
+
+        .msg_item.msgtype_sys {
+            text-align: center;
+        }
+
+        .msg_item.msgtype_to {
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        userId：<input id="userId" type='input' placeholder='userId' value="" size='60' /></br>
+        userName：<input id="userName" type='input' placeholder='userName' value="" size='60' /></br></br>
+        <input type="button" id="login" value="连接" />
+        <input type="button" id="logout" value="断开连接" />
+        </br></br>
+        内容：<input id="msg" type='input' placeholder='自定义消息' size='60' /></br></br>
+        <input type="button" id="send" value="发送" />
+        <input type="button" id="clearMsg" value="清空消息" />
+
+        <fieldset>
+            <legend>消息列表</legend>
+            <div class="msg_wrapper"></div>
+        </fieldset>
+
+        <fieldset>
+            <legend>用户列表，排除自己</legend>
+            <div class="user_wrapper"></div>
+        </fieldset>
+
+        <fieldset>
+            <legend>房间列表</legend>
+            <div class="room_wrapper"></div>
+        </fieldset>
+    </div>
+
+    <script src="https://cdn.bootcss.com/jquery/1.2.3/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/socket.io/2.2.0/socket.io.js"></script>
+    <script>
+        var socket_url = 'ws://localhost:2334';
+        var socket = null;//socket连接对象
+        var userId = null;//连接信息
+        var userName = null;
+
+        var userList = [];//用户列表，排除自己
+        var roomList = [];//房间列表
+        var msgList = [];//消息列表
+
+        function initEvent() {
+            socket.on('connect', () => {
+                //监听系统send事件
+                socket.on('message', function (data) {
+                    console.log(`收到服务端send，content：${JSON.stringify(data)}`)
+                    fn_msgList(data)
+                });
+
+                //监听系统用户连接通知
+                socket.on('sys_conn_msg', function (data) {
+                    console.log(`收到服务端系统用户连接通知，content：${JSON.stringify(data)}`)
+                    fn_msgList(data)
+                });
+
+                //监听断开连接
+                socket.on('disconnect', (reason) => {
+                    if (reason === 'io server disconnect') {
+                        // the disconnection was initiated by the server, you need to reconnect manually
+                        socket.connect();
+                    }
+                    fn_button_input()
+                });
+
+                fn_button_input()
+            });
+        }
+
+        $("#login").click(function () {
+            if (!(socket && socket.connected)) {
+                userId = $("#userId").val();
+                userName = $("#userName").val();
+
+                if (userId && userName) {
+
+                    socket = io(`${socket_url}?userId=${userId}&userName=${userName}`, {
+                        autoConnect: false//控制是否自动连接
+                    });
+                    socket.open();
+                    initEvent();
+                    console.log(`连接了`)
+                }
+                else {
+                    alert(`userId, userName需为有效值！`)
+                }
+            }
+            else {
+                console.log(`当前客户端已与服务端连接了`)
+            }
+        })
+        $("#logout").click(function () {
+            if (socket && socket.connected) {
+                let content = { socketid: socket.id, msg: "断开连接成功", time: new Date().getTime(), type: 'sys' }
+                fn_msgList(content)
+
+                socket.close();
+                console.log(`断开连接了`)
+            }
+            else {
+                console.log(`当前客户端已与服务端断开连接`)
+            }
+
+            fn_button_input();
+        })
+        $("#send").click(function () {
+            if (socket && socket.connected) {
+                let userId = $("#userId").val();
+                let userName = $("#userName").val();
+                let msg = $("#msg").val();
+
+                if (userId && userName && msg) {
+                    let content = { socketid: socket.id, userId, userName, msg, time: new Date().getTime(), type: 'to' }
+                    console.log(`客户端send消息，content：${JSON.stringify(content)}`)
+                    socket.send(content)
+                    fn_msgList(content)
+                }
+                else {
+                    alert(`userId, userName, msg均不能为空！`)
+                }
+            }
+            else {
+                console.log(`当前客户端已与服务端断开连接`)
+            }
+        })
+        $("#clearMsg").click(function () {
+            msgList = [];
+            fn_msgList();
+        })
+
+        function fn_msgList(data) {
+            if (data) {
+                msgList.push(data);
+                msgList.sort();
+            }
+
+            $(".msg_wrapper").html('');
+            msgList.forEach((item, index) => {
+                $(".msg_wrapper").append(`
+                    <div class="msg_item msgtype_${item.type}">
+                        socketid:${item.socketid}<br/>
+                        userId:${item.userId || ''}<br/>
+                        userName:${item.userName || ''}<br/>
+                        time:${item.time}<br/>
+                        msg:${item.msg}
+                    </div>
+                `)
+            })
+        }
+
+        function fn_button_input() {
+            if (socket && socket.connected) {
+                //已连接
+                //锁定userId,userName输入框，并禁用连接按钮
+                $("#userId,#userName").attr({ "readonly": true })
+                $("#login").attr({ "disabled": true })
+                //解锁消息内容输入框，并启用断开连接和发送消息按钮
+                $("#msg").removeAttr("readonly");
+                $("#logout,#send").removeAttr("disabled");
+            }
+            else {
+                //未连接
+                //解锁userId,userName输入框，并启用连接按钮
+                $("#userId,#userName").removeAttr("readonly");
+                $("#login").removeAttr("disabled");
+                //锁定消息内容输入框，并禁用断开连接和发送消息按钮
+                $("#msg").attr({ "readonly": true })
+                $("#logout,#send").attr({ "disabled": true })
+            }
+            console.log(socket)
+        }
+        fn_button_input();
+    </script>
+</body>
+
+</html>
