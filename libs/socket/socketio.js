@@ -9,19 +9,35 @@ var io = require('socket.io')(server);
     console.log(query);
 }); */
 
+var i_sockets = {};
+
 //连接成功触发事件
 io.sockets.on('connection', function (socket) {
     let userId = socket.request._query.userId || '';
     let userName = socket.request._query.userName || '';
     console.log(`客户端连接上了，socketid: ${socket.id}, userId:${userId}, userName:${userName}`)
 
+    socket.userId = userId;
+    socket.userName = userName;
+
+    i_sockets[socket.id] = socket;//存储连接对象
+
     //连接成功时，通知当前客户端
     let login_msg = { socketid: socket.id, userId, userName, msg: "恭喜，连接成功！", time: new Date().getTime(), type: 'sys' }
     socket.send(login_msg);
 
     //并广播所有用户
-    login_msg.msg = `${login_msg.socketid} 连接成功`;
-    //io.sockets.emit('sys_conn_msg', login_msg);
+    io.clients((error, clients) => {
+        if (error) throw error;
+
+        let user_list = [];
+        clients.map(item => {
+            user_list.push({ socketid: item, userId: i_sockets[item].userId, userName: i_sockets[item].userName })
+        })
+
+        io.sockets.emit('user_list', user_list);
+    });
+
 
     //接收客户端send来的信息
     socket.on('message', function (data) {
@@ -34,6 +50,11 @@ io.sockets.on('connection', function (socket) {
 
     //单人聊天信息
     socket.on('p2pmsg', function (data) {
+        console.log(`收到单人聊天消息，content：${JSON.stringify(data)}`)
+        data.type = "from";
+        let to_socketid = data.to_socketid;
+        delete data.to_socketid;
+        i_sockets[to_socketid].emit("p2pmsg", data)
     });
 
     //创建房间

@@ -4,6 +4,11 @@
 <head>
     <meta http-equiv='content-type' content='text/html; charset=utf-8' />
     <style>
+        .user_item {
+            /* width: 200px; */
+            border-bottom: 1px dotted #333;
+        }
+
         .msg_wrapper {
             width: 800px;
         }
@@ -34,6 +39,7 @@
         <input type="button" id="login" value="连接" />
         <input type="button" id="logout" value="断开连接" />
         </br></br>
+        接收id：<input id="to_socketid" type='input' placeholder='to_socketid' size='60' /></br>
         内容：<input id="msg" type='input' placeholder='自定义消息' size='60' /></br></br>
         <input type="button" id="send" value="发送" />
         <input type="button" id="clearMsg" value="清空消息" />
@@ -54,7 +60,7 @@
         </fieldset>
     </div>
 
-    <script src="https://cdn.bootcss.com/jquery/1.2.3/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/jquery/1.12.4/jquery.min.js"></script>
     <script src="https://cdn.bootcss.com/socket.io/2.2.0/socket.io.js"></script>
     <script>
         var socket_url = 'ws://localhost:2334';
@@ -73,11 +79,16 @@
                     console.log(`收到服务端send，content：${JSON.stringify(data)}`)
                     fn_msgList(data)
                 });
-
-                //监听系统用户连接通知
-                socket.on('sys_conn_msg', function (data) {
-                    console.log(`收到服务端系统用户连接通知，content：${JSON.stringify(data)}`)
+                //监听系统p2pmsg事件
+                socket.on('p2pmsg', function (data) {
+                    console.log(`收到服务端p2pmsg，content：${JSON.stringify(data)}`)
                     fn_msgList(data)
+                });
+
+                //监听用户列表事件
+                socket.on('user_list', function (data) {
+                    console.log(`收到服务端user_list，content：${JSON.stringify(data)}`)
+                    fn_user_list(data);
                 });
 
                 //监听断开连接
@@ -131,14 +142,21 @@
         })
         $("#send").click(function () {
             if (socket && socket.connected) {
-                let userId = $("#userId").val();
-                let userName = $("#userName").val();
+                let to_socketid = $("#to_socketid").val();
                 let msg = $("#msg").val();
 
                 if (userId && userName && msg) {
-                    let content = { socketid: socket.id, userId, userName, msg, time: new Date().getTime(), type: 'to' }
-                    console.log(`客户端send消息，content：${JSON.stringify(content)}`)
-                    socket.send(content)
+                    let content = { from_socketid: socket.id, userId, userName, msg, time: new Date().getTime(), type: 'to' }
+                    if (to_socketid && to_socketid.length > 0) {
+                        content.to_socketid = to_socketid
+                        console.log(`客户端p2p消息，content：${JSON.stringify(content)}`)
+                        socket.emit("p2pmsg", content)
+                    }
+                    else {
+
+                        console.log(`客户端send消息，content：${JSON.stringify(content)}`)
+                        socket.send(content)
+                    }
                     fn_msgList(content)
                 }
                 else {
@@ -164,13 +182,33 @@
             msgList.forEach((item, index) => {
                 $(".msg_wrapper").append(`
                     <div class="msg_item msgtype_${item.type}">
-                        socketid:${item.socketid}<br/>
+                        ${item.socketid && item.socketid.length > 0 ? `socketid:${item.socketid}<br/>` : ""}                         
+                        ${item.from_socketid && item.from_socketid.length > 0 ? `from_socketid:${item.from_socketid}<br/>` : ""} 
+                        ${item.to_socketid && item.to_socketid.length > 0 ? `to_socketid:${item.to_socketid}<br/>` : ""} 
                         userId:${item.userId || ''}<br/>
                         userName:${item.userName || ''}<br/>
                         time:${item.time}<br/>
                         msg:${item.msg}
                     </div>
                 `)
+            })
+        }
+
+        function fn_user_list(userList) {
+            $(".user_wrapper").html("");
+            userList.forEach((item, index) => {
+                if (item.socketid != socket.id) {
+                    $(".user_wrapper").append(`
+                        <div class="user_item" socketid="${item.socketid}">
+                            socketid:${item.socketid}  
+                            userId:${item.userId || ''}  
+                            userName:${item.userName || ''}  <input type="button" class="tochat" value="跟它聊天" />
+                        </div>
+                    `)
+                }
+            })
+            $(".tochat").on("click", function () {
+                $("#to_socketid").val($(this).parent().attr("socketid"))
             })
         }
 
