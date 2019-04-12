@@ -52,9 +52,12 @@ module.exports = function (settings) {
                 })
         });
 
+    //初始化表关联
     Object.keys(db).forEach(function (modelName) {
-        if ('associate' in db[modelName]) {
-            db[modelName].associate(db);
+        if (db[modelName] && db[modelName].options && db[modelName].options.classMethods && db[modelName].options.classMethods.associate) {
+            //if ('associate' in db[modelName]) {
+            //db[modelName].associate(db);
+            db[modelName].options.classMethods.associate(db)
         }
     });
 

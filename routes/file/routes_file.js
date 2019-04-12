@@ -172,7 +172,13 @@ module.exports = function (server, models) {
                                 h.response(data)
                                     .type(file_attr.contentType)
                                     .header('Cache-Control', 'public, max-age=86400, no-transform')
-                                    //.header('filename', file_attr.metadata.filename)
+                                //.header('filename', file_attr.metadata.filename)
+                                /**
+                                 * res.set({
+                                    'Content-Type': 'application/octet-stream', //告诉浏览器这是一个二进制文件
+                                    'Content-Disposition': 'attachment; filename=' + fileName, //告诉浏览器这是一个需要下载的文件
+                                    'Content-Length': stats.size  //文件大小
+                                 */
                             );
                         })
                     })

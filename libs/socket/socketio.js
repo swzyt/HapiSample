@@ -27,17 +27,7 @@ io.sockets.on('connection', function (socket) {
     socket.send(login_msg);
 
     //并广播所有用户
-    io.clients((error, clients) => {
-        if (error) throw error;
-
-        let user_list = [];
-        clients.map(item => {
-            user_list.push({ socketid: item, userId: i_sockets[item].userId, userName: i_sockets[item].userName })
-        })
-
-        io.sockets.emit('user_list', user_list);
-    });
-
+    broadcast_user_list();
 
     //接收客户端send来的信息
     socket.on('message', function (data) {
@@ -57,28 +47,49 @@ io.sockets.on('connection', function (socket) {
         i_sockets[to_socketid].emit("p2pmsg", data)
     });
 
-    //创建房间
-    socket.on('room-create', function (data) {
-    });
-
-    //删除房间
-    socket.on('room-delete', function (data) {
-    });
-
     //加入房间
     socket.on('room-join', function (data) {
+        console.log("room-join", data)
+        socket.join(data.room_name, (join_result) => {
+            console.log({ join_result })
+            socket.emit("roommsg", { msg: `您已加入房间: ${data.room_name}` })
+        })
+    });
+    //离开房间
+    socket.on('room-leave', function (data) {
+        console.log("room-leave", data)
+        socket.leave(data.room_name, (join_result) => {
+            console.log({ join_result })
+            socket.emit("roommsg", { msg: `您已离开房间: ${data.room_name}` })
+        })
     });
 
     //发送房间消息
-    socket.on('roommsg', function (data) {
+    socket.on('room-msg', function (data) {
     });
 
     //断开连接触发事件
     socket.on('disconnect', function (data) {
+        delete i_sockets[socket.id];
+
+        broadcast_user_list();
         console.log(`客户端断开了，id: ${socket.id} ${JSON.stringify(data)}`)
     });
 
 });
+
+function broadcast_user_list() {
+    io.clients((error, clients) => {
+        if (error) throw error;
+
+        let user_list = [];
+        clients.map(item => {
+            user_list.push({ socketid: item, userId: i_sockets[item].userId, userName: i_sockets[item].userName })
+        })
+
+        io.sockets.emit('user_list', user_list);
+    });
+}
 
 //广播事件
 function broadcast() {

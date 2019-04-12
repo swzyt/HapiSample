@@ -39,7 +39,11 @@
         <input type="button" id="login" value="连接" />
         <input type="button" id="logout" value="断开连接" />
         </br></br>
-        接收id：<input id="to_socketid" type='input' placeholder='to_socketid' size='60' /></br>
+        接收id：<input id="to_socketid" type='input' placeholder='to_socketid' size='60' readonly="readonly" /></br>
+        房间名称：<input id="room_name" type='input' placeholder='房间名称' size='60' />
+        <input type="button" id="join_room" value="加入房间" />
+        <input type="button" id="leave_room" value="离开房间" />
+        </br>
         内容：<input id="msg" type='input' placeholder='自定义消息' size='60' /></br></br>
         <input type="button" id="send" value="发送" />
         <input type="button" id="clearMsg" value="清空消息" />
@@ -82,6 +86,11 @@
                 //监听系统p2pmsg事件
                 socket.on('p2pmsg', function (data) {
                     console.log(`收到服务端p2pmsg，content：${JSON.stringify(data)}`)
+                    fn_msgList(data)
+                });
+                //监听系统roommsg事件
+                socket.on('roommsg', function (data) {
+                    console.log(`收到服务端roommsg，content：${JSON.stringify(data)}`)
                     fn_msgList(data)
                 });
 
@@ -140,6 +149,22 @@
 
             fn_button_input();
         })
+
+        $("#join_room").click(function () {
+            let room_name = $("#room_name").val()
+            if (room_name.length > 0) {
+                socket.emit("room-join", { room_name })
+            }
+            else { alert("房间名称不能为空！") }
+        })
+        $("#leave_room").click(function () {
+            let room_name = $("#room_name").val()
+            if (room_name.length > 0) {
+                socket.emit("room-leave", { room_name })
+            }
+            else { alert("房间名称不能为空！") }
+        })
+
         $("#send").click(function () {
             if (socket && socket.connected) {
                 let to_socketid = $("#to_socketid").val();

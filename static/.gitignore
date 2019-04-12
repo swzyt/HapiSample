@@ -1,4 +1,5 @@
 ﻿#忽略本文件夹下除readme.txt和.gitignore外的所有文件
 *
-!readme.txt
+!mongo_file/readme.txt
+!zhihu/img/readme.txt
 !.gitignore
