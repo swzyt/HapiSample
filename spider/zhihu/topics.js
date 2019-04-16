@@ -8,7 +8,7 @@ var Crawler = require('crawler');
 var restler_client = require('restler');
 var _ = require("lodash")
 var cheerio = require('cheerio')
-var download_img = require("./img_download_helper")
+var download_img = require("../utils/img_download_helper")
 
 var c = new Crawler({
     //rateLimit: 1000,//爬取url时间间隔
@@ -81,8 +81,13 @@ const getChildTopic = (curr_level_topics, curr_level_topic_index, offset) => {
                     parent_id: curr_topic.topic_id,
                 }
 
+                let download_result = await download_img([obj_topic.img_url])//下载图片
+                //console.log(download_result)
+                if (download_result && download_result.length > 0) {
+                    obj_topic.local_img_url = download_result[0].filename;
+                }
+
                 await insert_redis_sorted_set(TOPIC_REDIS_KEY, obj_topic)
-                download_img([obj_topic.img_url])//下载图片
 
                 return obj_topic;
             })
@@ -107,7 +112,7 @@ const getCurrLevelTopicFromRedis = async () => {
 
     let result = await redis_client.zrange(TOPIC_REDIS_KEY, 0, key_length);
 
-    if (result && result.length > 0) {
+    if (key_length > 0 && result && result.length > 0) {
         console.log(`${TOPIC_REDIS_KEY} Redis data 读取成功……`)
         console.log(``)
         console.log(`********************************************************************************`)

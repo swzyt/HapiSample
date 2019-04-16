@@ -13,6 +13,12 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "spider zhihu questions",
+            "program": "${workspaceFolder}\\spider\\zhihu\\questions.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "spider zhihu topics",
             "program": "${workspaceFolder}\\spider\\zhihu\\topics.js"
         },

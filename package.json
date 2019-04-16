@@ -27,6 +27,7 @@
   "dependencies": {
     "amqplib": "^0.5.3",
     "async-redis": "^1.1.7",
+    "bagpipe": "^0.3.5",
     "boom": "^7.3.0",
     "crawler": "^1.2.0",
     "guid": "0.0.12",
@@ -44,6 +45,7 @@
     "mysql2": "^1.6.5",
     "nconf": "^0.10.0",
     "redis": "^2.8.0",
+    "request": "^2.88.0",
     "restler": "^3.4.0",
     "sequelize": "^4.43.0",
     "socket.io": "^2.2.0",
