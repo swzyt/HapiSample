@@ -2,18 +2,13 @@ const asyncRedis = require("async-redis");
 const redis_client = asyncRedis.decorate(require("../../libs/cache").client);
 redis_client.select(1);
 
-var QUESTION_ID = '26656153';
+var QUESTION_ID = '316196110';
 
 var restler_client = require('restler');
 var _ = require("lodash")
 var cheerio = require('cheerio')
-var request = require('request')
-var fs = require('fs')
-var Bagpipe = require('bagpipe');
-var bagpipe = new Bagpipe(10);
-/* bagpipe.on('full', function (length) {
-    console.warn('图片下载队列长度为:' + length);
-}); */
+
+var download_img = require("../../utils/img_download_helper")
 
 var QUESTION_REDIS_KEY = "QUESTIONS:Q_ID_" + QUESTION_ID;
 
@@ -52,15 +47,7 @@ const getAnswers = (offset) => {
                 let answer_img = $("img");
                 answer_img.map(async (img_index, img_item) => {
                     if (img_item.attribs && img_item.attribs.src && (img_item.attribs.src.indexOf("https://pic") > -1 || img_item.attribs.src.indexOf("http://pic") > -1)) {
-                        //console.log(img_item.attribs.src)
-
-                        let name = img_item.attribs.src.slice(img_item.attribs.src.lastIndexOf('/') + 1)
-
-                        //download_img(img_item.attribs.src, './static/zhihu/img/' + name)
-                        bagpipe.push(download_img, img_item.attribs.src, './static/zhihu/img/' + name, function (err, data) {
-                            //console.log(img_item.attribs.src)
-                            //console.log(img_item.attribs.src, err, data)
-                        });
+                        download_img([img_item.attribs.src], `/zhihu/img/Q_${QUESTION_ID}/A_${item.id}/`)
                     }
                 })
             })
@@ -84,15 +71,6 @@ const object2formdata = function (obj, is_encodeURI = true) {
         }
     })
     return arr.join('&');
-}
-
-const download_img = function (url, dest) {
-    //const name = url.slice(url.lastIndexOf('/') + 1)
-    //'./static/zhihu/img/' + name
-    request(url).pipe(fs.createWriteStream(dest)).on('close', function () {
-        console.log("当前图片下载完成，通知bagpipe继续执行下一队列")
-        bagpipe._next();
-    })
 }
 
 //开始
