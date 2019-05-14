@@ -3,18 +3,20 @@ var Joi = require('joi');
 var Status = require("../../../libs/status")
 var page_size_number = require("../../../libs/page_size_number")
 
-const PREFIX = "App";
+const PREFIX = "Button";
 
 var RequestModel = {
-    app_id: Joi.string().optional().description('应用标识'),
-    name: Joi.string().max(100).allow(['', null]).description('应用名称'),
+    button_id: Joi.string().optional().description('按钮标识'),
+    name: Joi.string().max(100).allow(['', null]).description('按钮名称'),
+    code: Joi.string().max(100).allow(['', null]).description('编码'),
     description: Joi.string().allow(['', null]).description('描述'),
     valid: Joi.boolean().allow(['', null]).description('是否有效'),
 };
 
 var ResponseModel = {
-    app_id: Joi.string().required().description('应用标识'),
-    name: Joi.string().max(100).allow(['', null]).description('应用名称'),
+    button_id: Joi.string().required().description('按钮标识'),
+    name: Joi.string().max(100).allow(['', null]).description('按钮名称'),
+    code: Joi.string().max(100).allow(['', null]).description('编码'),
     description: Joi.string().allow(['', null]).description('描述'),
     valid: Joi.boolean().allow(['', null]).description('是否有效'),
     created_at: Joi.date().description('创建时间'),
@@ -26,7 +28,7 @@ module.exports = {
     get: {
         request: {
             params: {
-                app_id: Joi.string().required().description('应用标识')
+                button_id: Joi.string().required().description('按钮标识')
             }
         },
         response: {
@@ -45,7 +47,8 @@ module.exports = {
     list: {
         request: {
             query: {
-                name: Joi.string().allow(['', null]).description('操作类型'),
+                name: Joi.string().allow(['', null]).description('按钮名称'),
+                code: Joi.string().max(100).allow(['', null]).description('编码'),
                 description: Joi.string().allow(['', null]).description('描述'),
                 valid: Joi.string().allow(['', null]).description('是否有效'),
                 created_at: Joi.string().allow(['', null]).description('创建时间'),
@@ -72,7 +75,7 @@ module.exports = {
             schema: Joi.object({
                 code: Joi.number().integer().description("返回代码"),
                 message: Joi.string().description('返回信息'),
-                data: Joi.object(ResponseModel).meta({ className: PREFIX + "PostResponseData" }).required().description("应用信息")
+                data: Joi.object(ResponseModel).meta({ className: PREFIX + "PostResponseData" }).required().description("按钮信息")
             }).meta({ className: PREFIX + "PostResponse" }).required().description("返回消息体"),
             status: Status
         }
@@ -81,7 +84,7 @@ module.exports = {
     put: {
         request: {
             params: {
-                app_id: Joi.string().required().description('应用标识')
+                button_id: Joi.string().required().description('按钮标识')
             },
             payload: Joi.object(RequestModel).meta({ className: PREFIX + 'PutRequest' })
         },
@@ -97,7 +100,7 @@ module.exports = {
     update_batch: {
         request: {
             payload: {
-                app_ids: Joi.array().required().description('应用标识'),
+                button_ids: Joi.array().required().description('按钮标识'),
                 ...RequestModel
             }
         },
@@ -113,7 +116,7 @@ module.exports = {
     delete: {
         request: {
             params: {
-                app_id: Joi.string().required().description('应用标识')
+                button_id: Joi.string().required().description('按钮标识')
             }
         },
         response: {
@@ -128,7 +131,7 @@ module.exports = {
     delete_batch: {
         request: {
             payload: {
-                app_ids: Joi.array().required().description('应用标识')
+                button_ids: Joi.array().required().description('按钮标识')
             }
         },
         response: {

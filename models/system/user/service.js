@@ -1,10 +1,9 @@
 var _ = require('lodash');
 var moment = require("moment");
 var Boom = require('boom');
-var Guid = require('guid');
 var Service = function (db) {
     this.db = db;
-    this.attributes = ['app_id', 'name', /* 'secret',  */'description', 'valid', 'created_at', 'updated_at'];
+    this.attributes = ['user_id', 'account', 'name', 'email', /* 'password',  */'description', 'valid', 'created_at', 'updated_at'];
 };
 //普通列表
 Service.prototype.list = function (where, page_size, page_number, orderArr) {
@@ -19,7 +18,7 @@ Service.prototype.list = function (where, page_size, page_number, orderArr) {
         options.limit = page_size;
         options.offset = page_size * (page_number - 1);
     }
-    return this.db.SystemApp.findAndCountAll(options)
+    return this.db.SystemUser.findAndCountAll(options)
 };
 //获取单项
 Service.prototype.get = function (where) {
@@ -29,22 +28,22 @@ Service.prototype.get = function (where) {
         attributes: this.attributes
     };
 
-    return this.db.SystemApp.findOne(option);
+    return this.db.SystemUser.findOne(option);
 };
 //创建
 Service.prototype.create = function (data) {
 
     var self = this;
 
-    //生成密钥
-    if (!data.secret) {
-        data.secret = Guid.create().toString()
+    //生成密码，默认123456
+    if (!data.password) {
+        data.password = "123456"
     }
 
-    return self.db.SystemApp.build(data).save().then(result => {
+    return self.db.SystemUser.build(data).save().then(result => {
         if (result) {
             result = JSON.parse(JSON.stringify(result))
-            delete result.secret//删除secret后返回
+            delete result.password//删除密码后返回
         }
 
         return result
@@ -53,7 +52,7 @@ Service.prototype.create = function (data) {
 //删除单个
 Service.prototype.delete = function (where) {
 
-    return this.db.SystemApp.findOne({ where: where }).then(function (item) {
+    return this.db.SystemUser.findOne({ where: where }).then(function (item) {
         if (item)
             return item.destroy();
         else
@@ -62,16 +61,15 @@ Service.prototype.delete = function (where) {
 };
 //删除批量
 Service.prototype.delete_batch = function (where) {
-    return this.db.SystemApp.destroy({ where: where })
+    return this.db.SystemUser.destroy({ where: where })
 };
 //更新单个
 Service.prototype.update = function (where, data) {
-    return this.db.SystemApp.update(data, { where: where });
+    return this.db.SystemUser.update(data, { where: where });
 };
 //更新批量
 Service.prototype.update_batch = function (where, data) {
-    return this.db.SystemApp.update(data, { where: where });
+    return this.db.SystemUser.update(data, { where: where });
 };
 
 module.exports = Service;
-

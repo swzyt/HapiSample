@@ -57,6 +57,19 @@ module.exports = function (server, models) {
             }
         },
         {
+            method: 'PUT',
+            path: '/system/apps/update_batch',
+            config: {
+                auth: 'jwt',
+                tags: ['api'],
+                description: '更新批量',
+                validate: models.system.app.validator.update_batch.request,
+                notes: 'My route notes',
+                response: models.system.app.validator.update_batch.response,
+                handler: models.system.app.controller.update_batch
+            }
+        },
+        {
             method: 'DELETE',
             path: '/system/apps/{app_id}',
             config: {
@@ -67,6 +80,19 @@ module.exports = function (server, models) {
                 notes: 'My route notes',
                 response: models.system.app.validator.delete.response,
                 handler: models.system.app.controller.delete
+            }
+        },
+        {
+            method: 'DELETE',
+            path: '/system/apps/delete_batch',
+            config: {
+                auth: 'jwt',
+                tags: ['api'],
+                description: '删除批量',
+                validate: models.system.app.validator.delete_batch.request,
+                notes: 'My route notes',
+                response: models.system.app.validator.delete_batch.response,
+                handler: models.system.app.controller.delete_batch
             }
         }
     ])

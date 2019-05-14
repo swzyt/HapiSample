@@ -1,21 +1,16 @@
 
 module.exports = function (sequelize, DataTypes) {
-  const SystemApp = sequelize.define('SystemApp', {
-    app_id: {
+  const SystemRole = sequelize.define('SystemRole', {
+    role_id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      comment: "应用id"
+      comment: "角色id"
     },
     name: {
       type: DataTypes.STRING(100),
       allowNull: true,
       comment: "名称"
-    },
-    secret: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      comment: "应用密钥"
     },
     description: {
       type: DataTypes.STRING(500),
@@ -29,7 +24,7 @@ module.exports = function (sequelize, DataTypes) {
       comment: "是否有效"
     }
   }, {
-      tableName: 'system_apps',
+      tableName: 'system_roles',
       timestamps: true,//自动添加时间戳createAt，updateAt
       underscored: true,
       classMethods: {
@@ -38,5 +33,5 @@ module.exports = function (sequelize, DataTypes) {
       }
     });
 
-  return SystemApp;
+  return SystemRole;
 };

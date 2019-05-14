@@ -31,7 +31,7 @@ exports.insertOne = function (request, callback) {
             request: {
                 headers: request.headers,
                 query: request.query,
-                body: body
+                body: body || (request.payload || null)
             },
             response: {
                 headers: request.response.headers || undefined,
@@ -81,7 +81,7 @@ exports.insertOne = function (request, callback) {
         mongo_db.insertOne(db_name, collection_name, item, callback)
     }
 
-    if (request.payload) {
+    if (request.path.indexOf("/storage/files/upload") > -1 && request.payload) {
         //转换payload
         var form = new multiparty.Form();
 

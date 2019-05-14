@@ -11,12 +11,14 @@ module.exports = function (server, models, oauth, db) {
             config: {
                 auth: false,
                 tags: ['api'],
-                description: '根据app_id和app_secret获取授权',
-                notes: '根据app_id和app_secret获取授',
+                description: '根据app_id、app_secret及用户账号密码 获取授权',
+                notes: '根据app_id、app_secret及用户账号密码 获取授权',
                 validate: {
                     query: {
                         app_id: Joi.string().required().description('app_id'),
-                        app_secret: Joi.string().required().description('app_secret')
+                        app_secret: Joi.string().required().description('app_secret'),
+                        user_account: Joi.string().required().description('用户账号'),
+                        user_password: Joi.string().required().description('用户密码')
                     }
                 },
                 response: {
@@ -24,7 +26,8 @@ module.exports = function (server, models, oauth, db) {
                         code: Joi.number().integer().description("返回代码"),
                         message: Joi.string().description('返回信息'),
                         data: Joi.object({
-                            app_id: Joi.string().required().description('应用标识'),
+                            app: Joi.object().required().description('应用信息'),
+                            user: Joi.object().required().description('用户信息'),
                             expiresAt: Joi.number().integer().required().description('过期时间(时间戳)'),
                             token: Joi.string().required().description('访问令牌')
                         }).meta({ className: "GetResponseData" }).allow(null).description("信息")
@@ -33,28 +36,60 @@ module.exports = function (server, models, oauth, db) {
                 handler: function (request, h) {
                     let app_id = request.query.app_id;
                     let app_secret = request.query.app_secret;
+                    let user_account = request.query.user_account;
+                    let user_password = request.query.user_password;
 
-                    //此处验证账户id和secret是否正确
-                    var option = {
+                    //此处验证app id和secret是否正确
+                    var app_option = {
+                        attributes: ['app_id', 'name', 'description', 'valid'],
                         where: {
                             app_id: app_id,
                             secret: app_secret
                         }
                     };
-
-                    return db.SystemApp.findOne(option).then(item => {
-                        if (!item) return h.error(Boom.badRequest("app_id或app_secret无效"));
-
-                        var tokens = {
-                            app_id: app_id,
-                            expiresAt: new Date().getTime() + settings.jwt.expire_times * 1000//按配置设置过期时间
+                    //此处验证user account和password是否正确
+                    var user_option = {
+                        attributes: ['user_id', 'account', 'name', 'email', 'description', 'valid'],
+                        where: {
+                            account: user_account,
+                            password: user_password
                         }
+                    };
+                    return Promise.all([
+                        db.SystemApp.findOne(app_option),
+                        db.SystemUser.findOne(user_option)
+                    ]).then(results => {
+                        if (results && results.length == 2) {
+                            let app = results[0], user = results[1];
 
-                        //sign the session as a JWT
-                        tokens.token = JWT.sign(tokens, settings.jwt.secret); // synchronous
+                            if (!app) {
+                                return h.error(Boom.badRequest("app_id或app_secret 有误"));
+                            }
+                            if (!user) {
+                                return h.error(Boom.badRequest("user_account或user_password 有误"));
+                            }
+                            if (app && !app.valid) {
+                                return h.error(Boom.badRequest("app已被禁用"));
+                            }
+                            if (user && !user.valid) {
+                                return h.error(Boom.badRequest("账号已被禁用"));
+                            }
 
-                        return h.success(tokens);
-                    });
+                            var tokens = {
+                                app,
+                                user,
+                                //按配置设置过期时间
+                                expiresAt: new Date().getTime() + settings.jwt.expire_times * 1000
+                            }
+                            //sign the session as a JWT
+                            tokens.token = JWT.sign(tokens, settings.jwt.secret) // synchronous
+
+                            return h.success(tokens);
+                        }
+                        else {
+                            return h.error(Boom.badRequest("app_id、app_secret、user_account或user_password 有误"));
+                        }
+                    })
                 }
             }
         }

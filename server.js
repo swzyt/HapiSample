@@ -104,7 +104,7 @@ module.exports = function (settings, bootstrap) {
         request.headers['c-req-start'] = (new Date()).getTime();//设置请求开始时间
 
         if (common_check(request)) {
-            console.log('onRequest')
+            console.log('----------------------------------------onRequest----------------------------------------')
         }
 
         return h.continue;
@@ -112,7 +112,14 @@ module.exports = function (settings, bootstrap) {
 
     Server.ext('onPostAuth', function (request, h) {
         if (common_check(request)) {
-            console.log('onPostAuth')
+            console.log('----------------------------------------onPostAuth---------------------------------------')
+        }
+        return h.continue;
+    });
+
+    Server.ext('onPreHandler', function (request, h) {
+        if (common_check(request)) {
+            console.log('---------------------------------------onPreHandler--------------------------------------')
         }
         return h.continue;
     });
@@ -130,7 +137,8 @@ module.exports = function (settings, bootstrap) {
         }
 
         if (common_check(request)) {
-            console.log('onPreResponse')
+            console.log('--------------------------------------onPreResponse--------------------------------------')
+            console.log(request.response)
 
             //此处记录日志
             api_log_server.insertOne(request, (err) => {
@@ -138,13 +146,6 @@ module.exports = function (settings, bootstrap) {
             })
         }
 
-        return h.continue;
-    });
-
-    Server.ext('onPreHandler', function (request, h) {
-        if (common_check(request)) {
-            console.log('onPreHandler')
-        }
         return h.continue;
     });
 

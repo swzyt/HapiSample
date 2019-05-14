@@ -1,10 +1,18 @@
 var _ = require('lodash');
 var moment = require("moment");
 var Boom = require('boom');
-var Guid = require('guid');
 var Service = function (db) {
     this.db = db;
-    this.attributes = ['app_id', 'name', /* 'secret',  */'description', 'valid', 'created_at', 'updated_at'];
+    this.attributes = ['button_id', 'name', 'code', 'description', 'valid', 'created_at', 'updated_at'];
+
+    this.include = [
+        {
+            model: this.db.SystemMenuButton,
+            as: "menus",
+            attributes: ['menu_id', 'button_id'],
+            required: false
+        }
+    ]
 };
 //普通列表
 Service.prototype.list = function (where, page_size, page_number, orderArr) {
@@ -19,7 +27,7 @@ Service.prototype.list = function (where, page_size, page_number, orderArr) {
         options.limit = page_size;
         options.offset = page_size * (page_number - 1);
     }
-    return this.db.SystemApp.findAndCountAll(options)
+    return this.db.SystemButton.findAndCountAll(options)
 };
 //获取单项
 Service.prototype.get = function (where) {
@@ -29,31 +37,19 @@ Service.prototype.get = function (where) {
         attributes: this.attributes
     };
 
-    return this.db.SystemApp.findOne(option);
+    return this.db.SystemButton.findOne(option);
 };
 //创建
 Service.prototype.create = function (data) {
 
     var self = this;
 
-    //生成密钥
-    if (!data.secret) {
-        data.secret = Guid.create().toString()
-    }
-
-    return self.db.SystemApp.build(data).save().then(result => {
-        if (result) {
-            result = JSON.parse(JSON.stringify(result))
-            delete result.secret//删除secret后返回
-        }
-
-        return result
-    });
+    return self.db.SystemButton.build(data).save()
 };
 //删除单个
 Service.prototype.delete = function (where) {
 
-    return this.db.SystemApp.findOne({ where: where }).then(function (item) {
+    return this.db.SystemButton.findOne({ where: where }).then(function (item) {
         if (item)
             return item.destroy();
         else
@@ -62,15 +58,15 @@ Service.prototype.delete = function (where) {
 };
 //删除批量
 Service.prototype.delete_batch = function (where) {
-    return this.db.SystemApp.destroy({ where: where })
+    return this.db.SystemButton.destroy({ where: where })
 };
 //更新单个
 Service.prototype.update = function (where, data) {
-    return this.db.SystemApp.update(data, { where: where });
+    return this.db.SystemButton.update(data, { where: where });
 };
 //更新批量
 Service.prototype.update_batch = function (where, data) {
-    return this.db.SystemApp.update(data, { where: where });
+    return this.db.SystemButton.update(data, { where: where });
 };
 
 module.exports = Service;

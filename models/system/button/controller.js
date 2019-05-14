@@ -12,6 +12,9 @@ Controller.prototype.list = function (request, h) {
     if (request.query.name) {
         where.name = { $like: `%${request.query.name}%` }
     }
+    if (request.query.code) {
+        where.code = { $like: `%${request.query.code}%` }
+    }
     if (request.query.description) {
         where.description = { $like: `%${request.query.description}%` }
     }
@@ -49,7 +52,7 @@ Controller.prototype.list = function (request, h) {
 //获取单项
 Controller.prototype.get = function (request, h) {
 
-    var where = { app_id: request.params.app_id };
+    var where = { button_id: request.params.button_id };
 
     return this.service.get(where).then(function (row) {
 
@@ -79,7 +82,7 @@ Controller.prototype.create = function (request, h) {
 //删除单个
 Controller.prototype.delete = function (request, h) {
 
-    var where = { app_id: request.params.app_id };
+    var where = { button_id: request.params.button_id };
 
     return this.service.delete(where).then(function (row) {
         return h.success();
@@ -90,7 +93,7 @@ Controller.prototype.delete = function (request, h) {
 //删除批量
 Controller.prototype.delete_batch = function (request, h) {
 
-    var where = { app_id: { $in: request.payload.app_ids } };
+    var where = { button_id: { $in: request.payload.button_ids } };
 
     return this.service.delete_batch(where).then(function (row) {
         return h.success();
@@ -101,7 +104,7 @@ Controller.prototype.delete_batch = function (request, h) {
 //更新单个
 Controller.prototype.update = function (request, h) {
 
-    var where = { app_id: request.params.app_id };
+    var where = { button_id: request.params.button_id };
 
     return this.service.update(where, request.payload).then(function (result) {
         return h.success();
@@ -112,8 +115,8 @@ Controller.prototype.update = function (request, h) {
 //更新批量
 Controller.prototype.update_batch = function (request, h) {
 
-    var where = { app_id: request.payload.app_ids };
-    delete request.payload.app_ids
+    var where = { button_id: request.payload.button_ids };
+    delete request.payload.button_ids
 
     return this.service.update_batch(where, request.payload).then(function (result) {
         return h.success();
