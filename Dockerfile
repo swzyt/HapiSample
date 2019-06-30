@@ -1,4 +1,3 @@
-#
 # docker build --rm -t hapisimple:v1 .
 
 # FROM node:8

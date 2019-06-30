@@ -1,0 +1,20 @@
+version: "3"
+services:
+  local-redis:
+      container_name: local-redis
+      image: redis:latest
+      ports:
+        - 6379:6379
+      volumes:
+        - /D/WorkSpace/Framework/HapiSimple/docker/redis/data:/data
+      networks:
+        - local-redis-ms-network
+      # 设置持久化
+      command: redis-server --appendonly yes
+      environment: #environment 和 Dockerfile 中的 ENV 指令一样会把变量一直保存在镜像、容器中，类似 docker run -e 的效果。设置容器的环境变量
+        - TZ=Asia/Shanghai
+      restart: always
+
+networks:
+  local-redis-ms-network:
+    driver: bridge

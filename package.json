@@ -9,7 +9,9 @@
     "test": "node --inspect index",
     "start": "node index",
     "start-docker-windows": "set NODE_ENV=docker && node index.js",
-    "start-docker-linux-mac": "export NODE_ENV=docker && node index.js"
+    "start-docker-linux-mac": "export NODE_ENV=docker && node index.js",
+    "start-cnblogs-V2-docker-linux-mac": "export NODE_ENV=docker && node libs/cnblogs/V2/index.js",
+    "start-cnblogs-V3-docker-linux-mac": "export NODE_ENV=docker && node libs/cnblogs/V3/index.js"
   },
   "keywords": [
     "Hapi",

@@ -17,7 +17,7 @@ module.exports = {
         "username": "root",
         "password": "123456",
         "options": {
-            "host": "local-mysql",
+            "host": "local-mysql-master",
             "port": 3306,
             "dialect": "mysql",
             "logging": true,
@@ -48,7 +48,7 @@ module.exports = {
     //rabbitmq配置
     rabbitmq: {
         hosts: [
-            "amqp://admin:admin@localhost:5672",//指定帐号密码及端口
+            "amqp://admin:admin@local-rabbitmq1:5672",//指定帐号密码及端口
             "amqp://localhost"//默认
         ],
         options: {

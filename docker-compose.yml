@@ -2,164 +2,6 @@
 version: '3'
 
 services:
-  
-  local-mysql:
-    container_name: local-mysql
-    image: mysql:5.7
-    ports:
-      - 3306:3306
-    volumes:
-      - /D/DockerFileSystem/mysql/data:/var/lib/mysql
-    networks:
-      - comnet
-    environment:
-      MYSQL_ROOT_PASSWORD:  "123456"
-      MYSQL_DATABASE: Test
-    restart: always
-
-  local-redis:
-    container_name: local-redis
-    image: redis:latest
-    ports:
-      - 6379:6379
-    volumes:
-      - /D/DockerFileSystem/redis/data:/data
-    networks:
-      - comnet
-    # 设置持久化
-    command: redis-server --appendonly yes
-    environment: #environment 和 Dockerfile 中的 ENV 指令一样会把变量一直保存在镜像、容器中，类似 docker run -e 的效果。设置容器的环境变量
-      - TZ=Asia/Shanghai
-    restart: always
-
-  local-mongo:
-    container_name: local-mongo
-    image: mongo:latest
-    ports:
-      - 27017:27017
-    volumes:
-      - /D/DockerFileSystem/mongo:/data
-    networks:
-      - comnet
-    environment:                #environment 和 Dockerfile 中的 ENV 指令一样会把变量一直保存在镜像、容器中，类似 docker run -e 的效果。设置容器的环境变量
-      - TZ=Asia/Shanghai
-    restart: always
-
-  local-rabbitmq1:
-    container_name: local-rabbitmq1
-    # image: rabbitmq:management-alpine # 官方版，不能在 environment 内添加自动加入集群节点代码
-    image: bijukunjummen/rabbitmq-server:3.7.0 # 集群版
-    hostname: local-rabbitmq1
-    # command: /bin/bash -c && "rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl start_app"
-    environment:
-      # 用户名
-      - RABBITMQ_DEFAULT_USER=admin
-      # 用户密码
-      - RABBITMQ_DEFAULT_PASS=admin
-      # 配置相同Erlang Cookie，因为RabbitMQ是用Erlang实现的，Erlang Cookie相当于不同节点之间相互通讯的秘钥，Erlang节点通过交换Erlang Cookie获得认证。
-      # - RABBITMQ_ERLANG_COOKIE=localrabbitcookie
-      # 节点名称
-      # - RABBITMQ_NODENAME=local-rabbitmq1
-
-    # volumes:
-    #   - /D/DockerFileSystem/rabbit:/var/lib/rabbitmq
-    ports:
-      # web管理界面端口
-      - "15672:15672"
-      # 服务端口
-      - "5672:5672"
-    networks:
-      - comnet
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "200k"
-        max-file: "10"
-    restart: always
-
-  local-rabbitmq2:
-    container_name: local-rabbitmq2
-    # image: rabbitmq:management-alpine # 官方版，不能在 environment 内添加自动加入集群节点代码
-    image: bijukunjummen/rabbitmq-server:3.7.0 # 集群版
-    hostname: local-rabbitmq2
-    # command: /bin/bash -c && "rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl join_cluster --ram local-rabbitmq1@local-rabbitmq1 && rabbitmqctl start_app"
-    environment:
-      # 用户名
-      - RABBITMQ_DEFAULT_USER=admin
-      # 用户密码
-      - RABBITMQ_DEFAULT_PASS=admin
-      # 配置相同Erlang Cookie，因为RabbitMQ是用Erlang实现的，Erlang Cookie相当于不同节点之间相互通讯的秘钥，Erlang节点通过交换Erlang Cookie获得认证。
-      # - RABBITMQ_ERLANG_COOKIE=localrabbitcookie
-      # 节点名称
-      # - RABBITMQ_NODENAME=local-rabbitmq2
-
-      # 以下配置为用户自定义镜像支持的命令，官方镜像不支持
-      # https://github.com/bijukunjummen/docker-rabbitmq-cluster
-      - CLUSTERED=true
-      - CLUSTER_WITH=local-rabbitmq1
-      - RAM_NODE=true
-
-    # volumes:
-    #   - /D/DockerFileSystem/rabbit:/var/lib/rabbitmq
-    links:
-      - local-rabbitmq1
-    # depends_on:
-    #   - local-rabbitmq1
-    ports:
-      # web管理界面端口
-      - "15673:15672"
-      # 服务端口
-      - "5673:5672"
-    networks:
-      - comnet
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "200k"
-        max-file: "10"
-    restart: always
-
-  local-rabbitmq3:
-    container_name: local-rabbitmq3
-    # image: rabbitmq:management-alpine # 官方版，不能在 environment 内添加自动加入集群节点代码
-    image: bijukunjummen/rabbitmq-server:3.7.0 # 集群版
-    hostname: local-rabbitmq3
-    # command: /bin/bash -c && "rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl join_cluster --ram local-rabbitmq1@local-rabbitmq1 && rabbitmqctl start_app"
-    environment:
-      # 用户名
-      - RABBITMQ_DEFAULT_USER=admin
-      # 用户密码
-      - RABBITMQ_DEFAULT_PASS=admin
-      # 配置相同Erlang Cookie，因为RabbitMQ是用Erlang实现的，Erlang Cookie相当于不同节点之间相互通讯的秘钥，Erlang节点通过交换Erlang Cookie获得认证。
-      # - RABBITMQ_ERLANG_COOKIE=localrabbitcookie
-      # 节点名称
-      # - RABBITMQ_NODENAME=local-rabbitmq3
-
-      # 以下配置为用户自定义镜像支持的命令，官方镜像不支持
-      # https://github.com/bijukunjummen/docker-rabbitmq-cluster
-      - CLUSTERED=true
-      - CLUSTER_WITH=local-rabbitmq1
-      - RAM_NODE=true
-      
-    # volumes:
-    #   - /D/DockerFileSystem/rabbit:/var/lib/rabbitmq
-    links:
-      - local-rabbitmq1
-    # depends_on:
-    #   - local-rabbitmq1
-    ports:
-      # web管理界面端口
-      - "15674:15672"
-      # 服务端口
-      - "5674:5672"
-    networks:
-      - comnet
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "200k"
-        max-file: "10"
-    restart: always
 
   hapisimple:
     container_name: hapisimple
@@ -169,32 +11,69 @@ services:
     # build 不存在时，image为指定构建容器的镜像名称
     image: hapisimple:v1
     command: npm run start-docker-linux-mac
-    # volumes:
-    #   - /D/DockerFileSystem/hapisimple:/home/app/api/hapisimple
+    # command: npm run start-cnblogs-V2-docker-linux-mac
+    # command: npm run start-cnblogs-V3-docker-linux-mac
     networks:
-      - comnet
-    links:
-      - local-mysql
+      - local-comnet
+      - local-redis-network
+      - local-mysql-ms-network
+      - local-rabbitmq-ms-network
+      - local-mongo-ms-network
+    
+    # 连接yml文件内定义容器
+    # links:
+      # - local-mysql
+      # - local-redis
+      # - local-mongo
+      # - local-rabbitmq1
+
+    # 连接yml文件外运行的容器
+    external_links:
+      # 连接现有redis容器
       - local-redis
-      - local-mongo
+
+      # 连接现有mysql容器
+      - local-mysql-master
+
+      # 连接现有rabbit容器
       - local-rabbitmq1
-    depends_on:
-      - local-mysql
-      - local-redis
-      - local-mongo
-      - local-rabbitmq1
+      - local-rabbitmq2
+      - local-rabbitmq3
+    
+    # 定义yml文件内定义容器启动顺序
+    #depends_on:
+      # - local-mysql
+      # - local-redis
+      # - local-mongo
+      # - local-rabbitmq1
     ports:
       - 8888:8888
     environment: #environment 和 Dockerfile 中的 ENV 指令一样会把变量一直保存在镜像、容器中，类似 docker run -e 的效果。设置容器的环境变量
-      - TZ=Asia/Shanghai
+      - TZ=Asia/Shanghai    
     restart: always
 
 networks:
-  comnet:
-    # driver: bridge
-    external:
-      name: comnet
 
-#rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl start_app
-#rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl join_cluster --ram rabbit@local-rabbitmq1 && rabbitmqctl start_app
-#rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl join_cluster --ram local-rabbitmq1@local-rabbitmq1 && rabbitmqctl start_app
+  # 引用现有redis集群网络
+  local-redis-network:
+    external:
+      name: redis_local-redis-ms-network
+
+  # 引用现有mysql集群网络
+  local-mysql-ms-network:
+    external:
+      name: mysql_local-mysql-ms-network
+
+  # 引用现有rabbit集群网络
+  local-rabbitmq-ms-network:
+    external:
+      name: rabbitmq_local-rabbit-ms-network
+
+  # 引用现有mongo集群网络
+  local-mongo-ms-network:
+    external:
+      name: mongo_local-mongo-ms-network
+      
+  # 创建api网络
+  local-comnet:
+    driver: bridge

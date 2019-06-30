@@ -10,3 +10,5 @@ package-lock.json
 
 docker/mysql/master/other/
 docker/mysql/slave/other/
+docker/redis/data/
+docker/mongo/data/

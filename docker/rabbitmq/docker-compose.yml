@@ -1,0 +1,126 @@
+version: '3'
+
+services:
+
+  local-rabbitmq1:
+    container_name: local-rabbitmq1
+    # image: rabbitmq:management-alpine # 官方版，不能在 environment 内添加自动加入集群节点代码
+    image: bijukunjummen/rabbitmq-server:3.7.0 # 集群版
+    hostname: local-rabbitmq1
+    # command: /bin/bash -c && "rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl start_app"
+    environment:
+      # 用户名
+      - RABBITMQ_DEFAULT_USER=admin
+      # 用户密码
+      - RABBITMQ_DEFAULT_PASS=admin
+      # 配置相同Erlang Cookie，因为RabbitMQ是用Erlang实现的，Erlang Cookie相当于不同节点之间相互通讯的秘钥，Erlang节点通过交换Erlang Cookie获得认证。
+      # - RABBITMQ_ERLANG_COOKIE=localrabbitcookie
+      # 节点名称
+      # - RABBITMQ_NODENAME=local-rabbitmq1
+
+    # volumes:
+    #   - /D/DockerFileSystem/rabbit:/var/lib/rabbitmq
+    ports:
+      # web管理界面端口
+      - "15672:15672"
+      # 服务端口
+      - "5672:5672"
+    networks:
+      - local-rabbit-ms-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    restart: always
+
+  local-rabbitmq2:
+    container_name: local-rabbitmq2
+    # image: rabbitmq:management-alpine # 官方版，不能在 environment 内添加自动加入集群节点代码
+    image: bijukunjummen/rabbitmq-server:3.7.0 # 集群版
+    hostname: local-rabbitmq2
+    # command: /bin/bash -c && "rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl join_cluster --ram local-rabbitmq1@local-rabbitmq1 && rabbitmqctl start_app"
+    environment:
+      # 用户名
+      - RABBITMQ_DEFAULT_USER=admin
+      # 用户密码
+      - RABBITMQ_DEFAULT_PASS=admin
+      # 配置相同Erlang Cookie，因为RabbitMQ是用Erlang实现的，Erlang Cookie相当于不同节点之间相互通讯的秘钥，Erlang节点通过交换Erlang Cookie获得认证。
+      # - RABBITMQ_ERLANG_COOKIE=localrabbitcookie
+      # 节点名称
+      # - RABBITMQ_NODENAME=local-rabbitmq2
+
+      # 以下配置为用户自定义镜像支持的命令，官方镜像不支持
+      # https://github.com/bijukunjummen/docker-rabbitmq-cluster
+      - CLUSTERED=true
+      - CLUSTER_WITH=local-rabbitmq1
+      - RAM_NODE=true
+
+    # volumes:
+    #   - /D/DockerFileSystem/rabbit:/var/lib/rabbitmq
+    links:
+      - local-rabbitmq1
+    depends_on:
+      - local-rabbitmq1
+    ports:
+      # web管理界面端口
+      - "15673:15672"
+      # 服务端口
+      - "5673:5672"
+    networks:
+      - local-rabbit-ms-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    restart: always
+
+  local-rabbitmq3:
+    container_name: local-rabbitmq3
+    # image: rabbitmq:management-alpine # 官方版，不能在 environment 内添加自动加入集群节点代码
+    image: bijukunjummen/rabbitmq-server:3.7.0 # 集群版
+    hostname: local-rabbitmq3
+    # command: /bin/bash -c && "rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl join_cluster --ram local-rabbitmq1@local-rabbitmq1 && rabbitmqctl start_app"
+    environment:
+      # 用户名
+      - RABBITMQ_DEFAULT_USER=admin
+      # 用户密码
+      - RABBITMQ_DEFAULT_PASS=admin
+      # 配置相同Erlang Cookie，因为RabbitMQ是用Erlang实现的，Erlang Cookie相当于不同节点之间相互通讯的秘钥，Erlang节点通过交换Erlang Cookie获得认证。
+      # - RABBITMQ_ERLANG_COOKIE=localrabbitcookie
+      # 节点名称
+      # - RABBITMQ_NODENAME=local-rabbitmq3
+
+      # 以下配置为用户自定义镜像支持的命令，官方镜像不支持
+      # https://github.com/bijukunjummen/docker-rabbitmq-cluster
+      - CLUSTERED=true
+      - CLUSTER_WITH=local-rabbitmq1
+      - RAM_NODE=true
+      
+    links:
+      - local-rabbitmq1
+    depends_on:
+      - local-rabbitmq1
+    ports:
+      # web管理界面端口
+      - "15674:15672"
+      # 服务端口
+      - "5674:5672"
+    networks:
+      - local-rabbit-ms-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "10"
+    restart: always
+
+networks:
+  local-rabbit-ms-network:
+    driver: bridge
+
+
+#rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl start_app
+#rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl join_cluster --ram rabbit@local-rabbitmq1 && rabbitmqctl start_app
+#rabbitmqctl stop_app && rabbitmqctl reset && rabbitmqctl join_cluster --ram local-rabbitmq1@local-rabbitmq1 && rabbitmqctl start_app
