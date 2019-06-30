@@ -10,6 +10,8 @@ var RequestModel = {
     name: Joi.string().max(100).allow(['', null]).description('角色名称'),
     description: Joi.string().allow(['', null]).description('描述'),
     valid: Joi.boolean().allow(['', null]).description('是否有效'),
+
+    role_permissions: Joi.array().allow('', null).description('角色权限'),
 };
 
 var ResponseModel = {
@@ -17,6 +19,7 @@ var ResponseModel = {
     name: Joi.string().max(100).allow(['', null]).description('角色名称'),
     description: Joi.string().allow(['', null]).description('描述'),
     valid: Joi.boolean().allow(['', null]).description('是否有效'),
+    role_permissions: Joi.array().allow('', null).description('角色权限'),
     created_at: Joi.date().description('创建时间'),
     updated_at: Joi.date().description('更新时间')
 };
@@ -45,7 +48,7 @@ module.exports = {
     list: {
         request: {
             query: {
-                name: Joi.string().allow(['', null]).description('操作类型'),
+                name: Joi.string().allow(['', null]).description('角色名称'),
                 description: Joi.string().allow(['', null]).description('描述'),
                 valid: Joi.string().allow(['', null]).description('是否有效'),
                 created_at: Joi.string().allow(['', null]).description('创建时间'),

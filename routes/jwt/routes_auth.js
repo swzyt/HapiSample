@@ -50,6 +50,12 @@ module.exports = function (server, models, oauth, db) {
                     //此处验证user account和password是否正确
                     var user_option = {
                         attributes: ['user_id', 'account', 'name', 'email', 'description', 'valid'],
+                        include: [{
+                            //用户角色
+                            model: db.SystemUserRole,
+                            as: "roles",
+                            required: false
+                        }],
                         where: {
                             account: user_account,
                             password: user_password

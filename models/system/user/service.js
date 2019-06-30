@@ -4,12 +4,22 @@ var Boom = require('boom');
 var Service = function (db) {
     this.db = db;
     this.attributes = ['user_id', 'account', 'name', 'email', /* 'password',  */'description', 'valid', 'created_at', 'updated_at'];
+
+    this.include = [
+        {
+            //用户角色
+            model: this.db.SystemUserRole,
+            as: "roles",
+            required: false
+        }
+    ]
 };
 //普通列表
 Service.prototype.list = function (where, page_size, page_number, orderArr) {
 
     var options = {
         attributes: this.attributes,
+        include: this.include,
         where: where,
         order: orderArr
     };
@@ -44,6 +54,18 @@ Service.prototype.create = function (data) {
         if (result) {
             result = JSON.parse(JSON.stringify(result))
             delete result.password//删除密码后返回
+
+            //写入角色
+            var user_role_data = [];
+            data.roles && (
+                user_role_data = data.roles.map(function (role_id) {
+                    return {
+                        user_id: result.user_id,
+                        role_id
+                    }
+                })
+            )
+            self.db.SystemUserRole.bulkCreate(user_role_data);
         }
 
         return result
@@ -51,6 +73,9 @@ Service.prototype.create = function (data) {
 };
 //删除单个
 Service.prototype.delete = function (where) {
+
+    //删除角色
+    this.db.SystemUserRole.destroy({ where: where })
 
     return this.db.SystemUser.findOne({ where: where }).then(function (item) {
         if (item)
@@ -61,11 +86,33 @@ Service.prototype.delete = function (where) {
 };
 //删除批量
 Service.prototype.delete_batch = function (where) {
+    //删除角色
+    this.db.SystemUserRole.destroy({ where: where })
+
     return this.db.SystemUser.destroy({ where: where })
 };
 //更新单个
 Service.prototype.update = function (where, data) {
-    return this.db.SystemUser.update(data, { where: where });
+
+    var self = this; 
+    return self.db.SystemUser.update(data, { where: where }).then(result => {
+        if (result) {
+            //写入角色
+            self.db.SystemUserRole.destroy({ where: where }).then(function () {
+                var user_role_data = [];
+                data.roles && (
+                    user_role_data = data.roles.map(function (role_id) {
+                        return {
+                            user_id: where.user_id,
+                            role_id
+                        }
+                    })
+                )
+                self.db.SystemUserRole.bulkCreate(user_role_data);
+            })
+        }
+        return result
+    });
 };
 //更新批量
 Service.prototype.update_batch = function (where, data) {

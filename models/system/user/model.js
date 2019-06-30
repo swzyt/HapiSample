@@ -44,6 +44,10 @@ module.exports = function (sequelize, DataTypes) {
       underscored: true,
       classMethods: {
         associate: function (models) {
+          SystemUser.hasMany(models.SystemUserRole, {
+            as: "roles",
+            foreignKey: 'user_id'
+          });
         }
       }
     });

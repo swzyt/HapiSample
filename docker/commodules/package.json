@@ -1,0 +1,43 @@
+{
+  "name": "commodules",
+  "version": "1.0.0",
+  "description": "公共模块镜像",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+  },
+  "keywords": [
+  ],
+  "author": "suw",
+  "license": "ISC",
+  "dependencies": {
+    "amqplib": "^0.5.3",
+    "async-redis": "^1.1.7",
+    "bagpipe": "^0.3.5",
+    "boom": "^7.3.0",
+    "crawler": "^1.2.0",
+    "guid": "0.0.12",
+    "hapi": "^18.1.0",
+    "hapi-auth-jwt2": "^8.3.0",
+    "hapi-swagger": "^9.3.1",
+    "images-downloader": "^1.0.3",
+    "inert": "^5.1.2",
+    "joi": "^14.3.1",
+    "jsonwebtoken": "^8.5.0",
+    "lodash": "^4.17.11",
+    "moment": "^2.24.0",
+    "mongodb": "^3.1.13",
+    "multiparty": "^4.2.1",
+    "mysql2": "^1.6.5",
+    "nconf": "^0.10.0",
+    "redis": "^2.8.0",
+    "request": "^2.88.0",
+    "restler": "^3.4.0",
+    "sequelize": "^4.43.0",
+    "socket.io": "^2.2.0",
+    "socket.io-client": "^2.2.0",
+    "superagent": "^5.0.2",
+    "vision": "^5.4.4"
+  },
+  "devDependencies": {}
+}

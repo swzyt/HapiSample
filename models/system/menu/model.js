@@ -47,7 +47,7 @@ module.exports = function (sequelize, DataTypes) {
     sort: {
       type: DataTypes.INTEGER(),
       allowNull: false,
-      defaultValue: 1,
+      defaultValue: 0,
       comment: "排序值"
     },
     target: {

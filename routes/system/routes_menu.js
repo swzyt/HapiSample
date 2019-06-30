@@ -19,15 +19,41 @@ module.exports = function (server, models) {
         },
         {
             method: 'GET',
-            path: '/system/menus/treelist',
+            path: '/system/menus/menu_treelist_full',
             config: {
                 auth: 'jwt',
                 tags: ['api'],
                 description: '获取菜单树列表',
-                validate: models.system.menu.validator.treelist.request,
+                validate: models.system.menu.validator.menu_treelist_full.request,
                 notes: '获取菜单树列表',
-                response: models.system.menu.validator.treelist.response,
-                handler: models.system.menu.controller.treelist
+                response: models.system.menu.validator.menu_treelist_full.response,
+                handler: models.system.menu.controller.menu_treelist_full
+            }
+        },
+        {
+            method: 'GET',
+            path: '/system/menus/menu_treelist_simple_button',
+            config: {
+                auth: 'jwt',
+                tags: ['api'],
+                description: '获取菜单树列表',
+                validate: models.system.menu.validator.menu_treelist_simple_button.request,
+                notes: '获取菜单树列表',
+                response: models.system.menu.validator.menu_treelist_simple_button.response,
+                handler: models.system.menu.controller.menu_treelist_simple_button
+            }
+        },
+        {
+            method: 'GET',
+            path: '/system/menus/menu_treelist_simple_no_button',
+            config: {
+                auth: 'jwt',
+                tags: ['api'],
+                description: '获取菜单树列表',
+                validate: models.system.menu.validator.menu_treelist_simple_no_button.request,
+                notes: '获取菜单树列表',
+                response: models.system.menu.validator.menu_treelist_simple_no_button.response,
+                handler: models.system.menu.controller.menu_treelist_simple_no_button
             }
         },
         {

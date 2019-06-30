@@ -5,7 +5,7 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      comment: "应用id"
+      comment: "应用标识"
     },
     name: {
       type: DataTypes.STRING(100),

@@ -13,6 +13,8 @@ var RequestModel = {
     password: Joi.string().max(100).allow(['', null]).description('密码'),
     description: Joi.string().allow(['', null]).description('描述'),
     valid: Joi.boolean().allow(['', null]).description('是否有效'),
+
+    roles: Joi.array().allow(['', null]).description('用户角色'),
 };
 
 var ResponseModel = {
@@ -23,6 +25,9 @@ var ResponseModel = {
     //password: Joi.string().max(100).allow(['', null]).description('密码'),
     description: Joi.string().allow(['', null]).description('描述'),
     valid: Joi.boolean().allow(['', null]).description('是否有效'),
+
+    roles: Joi.array().allow(['', null]).description('用户角色'),
+
     created_at: Joi.date().description('创建时间'),
     updated_at: Joi.date().description('更新时间')
 };

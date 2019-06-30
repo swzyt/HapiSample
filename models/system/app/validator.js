@@ -45,7 +45,7 @@ module.exports = {
     list: {
         request: {
             query: {
-                name: Joi.string().allow(['', null]).description('操作类型'),
+                name: Joi.string().allow(['', null]).description('应用名称'),
                 description: Joi.string().allow(['', null]).description('描述'),
                 valid: Joi.string().allow(['', null]).description('是否有效'),
                 created_at: Joi.string().allow(['', null]).description('创建时间'),

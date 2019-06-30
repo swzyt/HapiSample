@@ -29,6 +29,16 @@ module.exports = function (sequelize, DataTypes) {
       underscored: true,
       classMethods: {
         associate: function (models) {
+          //角色表与权限表进行外键关联, 指定外键名称, 否则自动生成, 不直观
+          SystemRole.hasMany(models.SystemRolePermission, {
+            as: "role_permissions",
+            foreignKey: 'role_id'
+          });
+
+          SystemRole.hasMany(models.SystemUserRole, {
+            as: "users",
+            foreignKey: 'role_id'
+          });
         }
       }
     });

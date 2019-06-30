@@ -5,16 +5,16 @@ var quene_name = 'task_queue';
 let exchange_name = "", exchange_type = "", routingKeys = [];
 
 /*********************************普通测试****************************************************/
-mq.reveiveDefaultMsg(quene_name, (msg) => {
-    console.log(` 默认交换器 接收到消息: ${msg}`)
+mq.reveiveDefaultMsg(quene_name, (source_msg, content) => {
+    console.log(` 默认交换器 接收到消息: ${content}`)
 })
 /*********************************普通测试****************************************************/
 
 
 /*********************************fanout 交换器测试****************************************************/
 /* exchange_name = "logs_fanout"; exchange_type = "fanout";
-mq.receiveExchangeMsg(exchange_name, exchange_type, null, null, (msg) => {
-    console.log(` ${exchange_type} 交换器 ${exchange_name} 接收到消息: ${msg}`)
+mq.receiveExchangeMsg(exchange_name, exchange_type, null, null, (source_msg, content) => {
+    console.log(` ${exchange_type} 交换器 ${exchange_name} 接收到消息: ${content}`)
 }) */
 /*********************************fanout 交换器测试****************************************************/
 
@@ -25,8 +25,8 @@ mq.receiveExchangeMsg(exchange_name, exchange_type, null, null, (msg) => {
 //可执行 node test-consumer info log、 node test-consumer warn error 进行测试
 console.log(routingKeys)
 
-mq.receiveExchangeMsg(exchange_name, exchange_type, null, routingKeys, (msg) => {
-    console.log(` ${exchange_type} 交换器 ${exchange_name} 接收到消息: ${msg}`)
+mq.receiveExchangeMsg(exchange_name, exchange_type, null, routingKeys, (source_msg, content) => {
+    console.log(` ${exchange_type} 交换器 ${exchange_name} 接收到消息: ${content}`)
 }) */
 /*********************************direct 交换器测试****************************************************/
 
@@ -37,7 +37,7 @@ mq.receiveExchangeMsg(exchange_name, exchange_type, null, routingKeys, (msg) => 
 //可执行 node test-consumer info.*.*、 node test-consumer warn.*.*、 node test-consumer log.#、 node test-consumer error.# 进行测试
 console.log(routingKeys)
 
-mq.receiveExchangeMsg(exchange_name, exchange_type, null, routingKeys, (msg) => {
-    console.log(` ${exchange_type} 交换器 ${exchange_name} 接收到消息: ${msg}`)
+mq.receiveExchangeMsg(exchange_name, exchange_type, null, routingKeys, (source_msg, content) => {
+    console.log(` ${exchange_type} 交换器 ${exchange_name} 接收到消息: ${content}`)
 }) */
 /*********************************topic 交换器测试****************************************************/

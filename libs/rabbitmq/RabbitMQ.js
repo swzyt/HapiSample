@@ -30,7 +30,12 @@ const defaultOptions = {
     /**
      * 同时处理任务数(int), 指定消费者同时最多只会派发到N个任务, 当有N个任务未完成时, 不再接受新任务，默认 1
      */
-    prefetch_count: 1
+    prefetch_count: 1,
+
+    /**
+     * 重连次数限制
+     */
+    reConnectCount: 10,
 }
 
 class RabbitMQ {
@@ -41,6 +46,7 @@ class RabbitMQ {
      */
     constructor(hosts, options) {
         this.hosts = ["amqp://localhost"];
+
         if (hosts && hosts.length > 0) {
             this.hosts = hosts;
         }
@@ -55,6 +61,8 @@ class RabbitMQ {
         this.CHANNEL = null;
 
         this.options = { ...defaultOptions, ...options };
+
+        this._reConnectCount = 0;
 
         console.log(`The current configs. hosts: ${this.hosts.join(", ")}, options: ${JSON.stringify(this.options)}`)
     }
@@ -73,10 +81,12 @@ class RabbitMQ {
                 conn.on("error", (err) => {
                     self.CONN = null;
                     console.error("The RabbitMQ conn is error! The errorMsg is: ", JSON.stringify(err))
+                    reConnect(err)
                 })
-                conn.on("close", () => {
+                conn.on("close", (err) => {
                     self.CONN = null;
                     console.info("The RabbitMQ conn is closed!")
+                    reConnect(err)
                 })
 
                 self.CONN = conn;
@@ -87,10 +97,12 @@ class RabbitMQ {
                     channel.on("error", (err) => {
                         self.CHANNEL = null;
                         console.error("The RabbitMQ channel is error! The errorMsg is: ", JSON.stringify(err))
+                        reConnect(err)
                     })
-                    channel.on("close", () => {
+                    channel.on("close", (err) => {
                         self.CHANNEL = null;
                         console.info("The RabbitMQ channel is closed!")
+                        reConnect(err)
                     })
 
                     self.CHANNEL = channel;
@@ -105,22 +117,30 @@ class RabbitMQ {
             });
 
         function reConnect(err) {
-            console.error("The RabbitMQ conn happened a error! The errorMsg is: ", JSON.stringify(err))
-            self.CONN = null;
-            self.CHANNEL = null;
+            if (self._reConnectCount < self.options.reConnectCount) {
 
-            //主机连接轮询
-            let index = self.currentHostIndex + 1;
+                //重连次数+1
+                self._reConnectCount++;
 
-            if (index >= self.hostCount)
-                self.currentHostIndex = 0;
-            else
-                self.currentHostIndex = index;
+                console.error("The RabbitMQ conn happened an error! The errorMsg is: ", JSON.stringify(err))
+                self.CONN = null;
+                self.CHANNEL = null;
 
-            self.open = amqp.connect(self.hosts[self.currentHostIndex]);
+                //主机连接轮询
+                let index = self.currentHostIndex + 1;
 
-            //异常重新连接
-            self.init();
+                if (index >= self.hostCount)
+                    self.currentHostIndex = 0;
+                else
+                    self.currentHostIndex = index;
+
+                self.open = amqp.connect(self.hosts[self.currentHostIndex]);
+
+                //异常重新连接
+                self.init();
+            } else {
+                console.log("The RabbitMQ conn reconnect count is ", self._reConnectCount)
+            }
         }
     }
 
@@ -159,18 +179,17 @@ class RabbitMQ {
 
                     if (msg && msg.content) {
 
-                        let data = msg.content.toString();
+                        let content = msg.content.toString();
 
                         if (!self.options.noAck) {
                             //ack 操作完成后，通知当前任务已处理完，则等待接收下一次任务
                             //nack 通知当前任务处理失败，则等待接收下一次任务,nack的消息会再次转移给其他消费者处理
                             //此处为防止失败消息出现死循环传递至消费者处理，则同一标识为ack，后续处理失败由回调函数处理
-                            self.CHANNEL.ack(msg);
-                            //channel.nack(msg);
+                            //self.CHANNEL.ack(msg);
+                            //self.CHANNEL.nack(msg);
                         }
 
-                        receiveCallBack && receiveCallBack(data);
-
+                        receiveCallBack && receiveCallBack(msg, content);
                     }
                     else {
                         //当本次收到的msg有异常时，重新监听消息
@@ -182,7 +201,6 @@ class RabbitMQ {
             })
         })
     }
-
     /**
      * 发送指定类型交换器及路由key消息
      * @param {String} exchangeName 自定义交换器名称
@@ -241,17 +259,17 @@ class RabbitMQ {
 
                         if (msg && msg.content) {
 
-                            let data = msg.content.toString();
+                            let content = msg.content.toString();
 
                             if (!self.options.noAck) {
                                 //ack 操作完成后，通知当前任务已处理完，则等待接收下一次任务
                                 //nack 通知当前任务处理失败，则等待接收下一次任务,nack的消息会再次转移给其他消费者处理
                                 //此处为防止失败消息出现死循环传递至消费者处理，则同一标识为ack，后续处理失败由回调函数处理
-                                self.CHANNEL.ack(msg);
+                                //self.CHANNEL.ack(msg);
                                 //channel.nack(msg);
                             }
 
-                            receiveCallBack && receiveCallBack(data);
+                            receiveCallBack && receiveCallBack(msg, content);
 
                         }
                         else {

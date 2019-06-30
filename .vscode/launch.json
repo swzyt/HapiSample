@@ -13,6 +13,18 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "test cnblogs",
+            "program": "${workspaceFolder}\\libs\\cnblogs\\V3\\index.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "test cnblogs-consumer",
+            "program": "${workspaceFolder}\\libs\\cnblogs\\V3\\rabbit-consumer.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "spider zhihu questions",
             "program": "${workspaceFolder}\\spider\\zhihu\\questions.js"
         },

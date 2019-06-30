@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "NODE_ENV=development nodemon --ignore node_modules/ index",
     "test": "node --inspect index",
-    "production": "NODE_ENV=production node index",
-    "start": "node index"
+    "start": "node index",
+    "start-docker-windows": "set NODE_ENV=docker && node index.js",
+    "start-docker-linux-mac": "export NODE_ENV=docker && node index.js"
   },
   "keywords": [
     "Hapi",
@@ -16,11 +17,11 @@
     "demo",
     "simple",
     "framework",
-    "框架",
     "mongodb",
     "gridfs",
     "redis",
-    "文件服务"
+    "file",
+    "storage"
   ],
   "author": "suw",
   "license": "ISC",

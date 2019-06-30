@@ -1,11 +1,12 @@
 const Hapi = require('hapi');
 const _ = require('lodash');
-const api_log_server = require("./libs/logs/api_log");
+const { moment, getNow, getDiff } = require("./utils/moment");
+const api_log_server = require("./libs/api_logs");
 
 module.exports = function (settings, bootstrap) {
 
     var Server = new Hapi.Server({
-        host: settings.server.host,
+        //host: settings.server.host,
         port: settings.server.port,
         routes: {
             cors: {
@@ -50,6 +51,9 @@ module.exports = function (settings, bootstrap) {
             plugin: require('hapi-swagger'),//api文档插件
             options: {
                 lang: "zh-cn",//中文显示
+                // 定义接口以tags属性为分类【定义分类的大标题】,给./routes路由的配置config:tags使用
+                //grouping: "tags",
+                // 标签，用于对应路由config定义的tags进行归类
                 tags: [
                     { "name": "jwt", "description": "json web token" },//此处配置各模块描述内容
                     { "name": "system", "description": "系统设置" },
@@ -98,10 +102,15 @@ module.exports = function (settings, bootstrap) {
      * @param {*} request 请求对象
      */
     function common_check(request) {
-        return settings.api_logging && !request.path.startsWith("/swagger") && !request.path.startsWith("/documentation")
+        let no_url = settings.api_log.no_url || [];
+
+        return settings.api_log.on_off &&
+            no_url.filter(item => {
+                return request.path.startsWith(item)
+            }).length == 0
     }
     Server.ext('onRequest', function (request, h) {
-        request.headers['c-req-start'] = (new Date()).getTime();//设置请求开始时间
+        request.headers['req-start'] = getNow();//设置请求开始时间
 
         if (common_check(request)) {
             console.log('----------------------------------------onRequest----------------------------------------')
@@ -125,25 +134,21 @@ module.exports = function (settings, bootstrap) {
     });
 
     Server.ext('onPreResponse', function (request, h) {
-        var start = parseInt(request.headers['c-req-start']);
-        var end = (new Date()).getTime();
+        let startTime = request.headers['req-start'];
+        var endTime = getNow();//设置请求结束时间
 
-        if (request.response.headers) {
-            request.response.headers['c-api-version'] = "1.0.0";
-            request.response.headers['c-req-id'] = request.info.id;
-            request.response.headers['c-req-start'] = start;
-            request.response.headers['c-res-end'] = end;
-            request.response.headers['c-req-res-time'] = end - start;
-        }
+        //if (request.response.headers) {
+        request.response.headers['req-id'] = request.info.id;
+        request.response.headers['req-start'] = startTime;
+        request.response.headers['res-end'] = endTime;
+        request.response.headers['req-res-span-time'] = getDiff(startTime, endTime);
+        //}
 
         if (common_check(request)) {
             console.log('--------------------------------------onPreResponse--------------------------------------')
-            console.log(request.response)
 
             //此处记录日志
-            api_log_server.insertOne(request, (err) => {
-                //console.log(err)
-            })
+            api_log_server(request, bootstrap.db, settings);
         }
 
         return h.continue;

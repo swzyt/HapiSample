@@ -84,10 +84,7 @@ Controller.prototype.list = function (request, h) {
     })
 };
 //树列表
-Controller.prototype.treelist = function (request, h) {
-
-    let type = request.query.type || 'simple';//默认简单树列表
-
+Controller.prototype.menu_treelist_full = function (request, h) {
     /* let where = ' where 1 = 1 ';
     //模糊查询
     if (request.query.name) {
@@ -171,12 +168,28 @@ Controller.prototype.treelist = function (request, h) {
         where.updated_at = { $between: request.query.updated_at.split(",") }
     }
 
-    return this.service.treelist(type, where).then(function (menu_list) {
+    let child_field = request.query.child_field || 'children';
 
-        let treedata = [];
+    return this.service.menu_treelist_full(where).then(function (menu_list) {
+        let treedata = treeData(menu_list, 'menu_id', 'parent_id', child_field)
 
-        if (type == "full") treedata = treeData(menu_list, 'menu_id', 'parent_id', 'children')
-        else treedata = treeData(menu_list, 'value', 'parent_id', 'children')
+        return h.success(treedata);
+    }).catch(function (err) {
+        return h.error(Boom.badRequest(err.message, err));
+    })
+};
+Controller.prototype.menu_treelist_simple_button = function (request, h) {
+    return this.service.menu_treelist_simple_button().then(function (menu_list) {
+        let treedata = treeData(menu_list, 'value', 'parent_id', 'children')
+
+        return h.success(treedata);
+    }).catch(function (err) {
+        return h.error(Boom.badRequest(err.message, err));
+    })
+};
+Controller.prototype.menu_treelist_simple_no_button = function (request, h) {
+    return this.service.menu_treelist_simple_no_button().then(function (menu_list) {
+        let treedata = treeData(menu_list, 'value', 'parent_id', 'children')
 
         return h.success(treedata);
     }).catch(function (err) {

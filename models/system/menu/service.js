@@ -10,15 +10,30 @@ var Service = function (db) {
             //菜单按钮
             model: this.db.SystemMenuButton,
             as: "buttons",
-            attributes: ['menu_id', 'button_id'],
+            //attributes: ['menu_id', 'button_id'],
             required: false,
             include: [{
                 //按钮信息
                 attributes: ['name'],
                 association: this.db.SystemMenuButton.belongsTo(this.db.SystemButton, { foreignKey: 'button_id', as: 'button' }),
-                required: true
+                required: false
             }]
-        }
+        },
+        {
+            //菜单所属角色
+            association: this.db.SystemMenu.hasMany(this.db.SystemRolePermission, {
+                constraints: false,//constraints 设为false，运行时建立关系不会创建外键，否则会导致写入权限信息时，报错
+                foreignKey: 'permission_id',
+                sourceKey: 'menu_id',
+                /* targetKey: 'permission_id', */
+                as: 'roles'
+            }),
+            model: this.db.SystemRolePermission,
+            where: { permission_type: 'menu' },
+            as: "roles",
+            attributes: ['role_id', 'permission_id', 'permission_type', 'permission_check_type'],
+            required: false,
+        },
     ]
 };
 
@@ -81,8 +96,11 @@ Service.prototype.treelist = function (type, where) {
 
         if (type == "full") {
             return menu_list.map(item => {
+                let authority = item.roles ? [...new Set(item.roles.map(x => { return x.role_id }))] : null
                 return {
                     key: item.menu_id,//此处添加key字段，源于前端table组件显示树列表无此键值，会报错
+                    authority,
+                    hideInMenu: !item.is_show,
                     ...item
                 }
             })
@@ -90,11 +108,21 @@ Service.prototype.treelist = function (type, where) {
         else if (type == "simple") {
             return menu_list.map(item => {
                 return {
-                    key: item.menu_id,//此处添加key字段，源于前端table组件显示树列表无此键值，会报错
+                    key: 'menu@' + item.menu_id,//此处添加key字段，源于前端table组件显示树列表无此键值，会报错
                     title: item.name,
                     value: item.menu_id,
                     sort: item.sort,
-                    parent_id: item.parent_id
+                    parent_id: item.parent_id,
+                    buttons: item.buttons,//页面按钮
+
+                    //此处拼接菜单下的按钮，供角色列表配置权限用
+                    children: item.buttons.map(btn_item => {
+                        return {
+                            key: 'menu_button@' + btn_item.menu_button_id,
+                            title: btn_item.button.name,
+                            value: btn_item.menu_button_id,
+                        }
+                    })
                 }
             })
         }
@@ -103,6 +131,87 @@ Service.prototype.treelist = function (type, where) {
         console.log(err)
     })
 };
+Service.prototype.menu_treelist_full = function (where) {
+
+    let options = {
+        attributes: this.attributes,
+        include: this.include,
+        where: where,
+        order: [['parent_id', 'asc'], ['sort', 'asc']]
+    }
+
+    return this.db.SystemMenu.findAll(options).then(menu_list => {
+        menu_list = JSON.parse(JSON.stringify(menu_list));
+        return menu_list.map(item => {
+            let authority = item.roles ? [...new Set(item.roles.map(x => { return x.role_id }))] : null
+            return {
+                key: item.menu_id,//此处添加key字段，源于前端table组件显示树列表无此键值，会报错
+                authority,
+                hideInMenu: !item.is_show,
+                ...item
+            }
+        })
+    }).catch((err) => {
+        console.log(err)
+    })
+};
+Service.prototype.menu_treelist_simple_button = function () {
+
+    let options = {
+        attributes: this.attributes,
+        include: this.include,
+        order: [['parent_id', 'asc'], ['sort', 'asc']]
+    }
+
+    return this.db.SystemMenu.findAll(options).then(menu_list => {
+        menu_list = JSON.parse(JSON.stringify(menu_list));
+        return menu_list.map(item => {
+            return {
+                key: 'menu@' + item.menu_id,//此处添加key字段，源于前端table组件显示树列表无此键值，会报错
+                title: item.name,
+                value: item.menu_id,
+                sort: item.sort,
+                parent_id: item.parent_id,
+                buttons: item.buttons,//页面按钮
+
+                //此处拼接菜单下的按钮，供角色列表配置权限用
+                children: item.buttons.map(btn_item => {
+                    return {
+                        key: 'menu_button@' + btn_item.menu_button_id,
+                        title: btn_item.button.name,
+                        value: btn_item.menu_button_id,
+                    }
+                })
+            }
+        })
+    }).catch((err) => {
+        console.log(err)
+    })
+};
+Service.prototype.menu_treelist_simple_no_button = function () {
+
+    let options = {
+        attributes: this.attributes,
+        include: this.include,
+        order: [['parent_id', 'asc'], ['sort', 'asc']]
+    }
+
+    return this.db.SystemMenu.findAll(options).then(menu_list => {
+        menu_list = JSON.parse(JSON.stringify(menu_list));
+        return menu_list.map(item => {
+            return {
+                key: item.menu_id,//此处添加key字段，源于前端table组件显示树列表无此键值，会报错
+                title: item.name,
+                value: item.menu_id,
+                sort: item.sort,
+                parent_id: item.parent_id
+            }
+        })
+    }).catch((err) => {
+        console.log(err)
+    })
+};
+
 //获取单项
 Service.prototype.get = function (where) {
 

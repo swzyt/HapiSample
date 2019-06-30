@@ -70,12 +70,12 @@ module.exports = function (db) {
                         }
 
                     } catch (e) {
-                        console.log(e.message)
+                        /* console.log(e.message)
 
                         if (e.errno != -4058) {
                             console.log(model_name);
                             console.log(e);
-                        }
+                        } */
                     }
                 });
         });

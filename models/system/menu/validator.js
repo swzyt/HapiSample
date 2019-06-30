@@ -85,10 +85,10 @@ module.exports = {
         }
     },
     //获取菜单树列表
-    treelist: {
+    menu_treelist_full: {
         request: {
             query: {
-                type: Joi.string().default('simple').required().description('查询类型。简版(simple)/完整(full)'),
+                child_field: Joi.string().valid('children', 'routes').default('children').description('子节点名称'),
                 name: Joi.string().max(100).allow(['', null]).description('菜单名称'),
                 path: Joi.string().max(100).allow(['', null]).description('路由地址'),
                 component: Joi.string().max(100).allow(['', null]).description('页面地址'),
@@ -100,6 +100,34 @@ module.exports = {
                 parent_id: Joi.string().allow(['', null]).description('父级菜单id'),
                 created_at: Joi.string().allow(['', null]).description('创建时间'),
                 updated_at: Joi.string().allow(['', null]).description('更新时间'),
+            }
+        },
+        response: {
+            schema: Joi.object({
+                code: Joi.number().integer().description("返回代码"),
+                message: Joi.string().description('返回信息'),
+                data: Joi.array().meta({ className: PREFIX + "ListResponseData" }).allow(['', null])
+            }).meta({ className: PREFIX + "ListResponse" }).required().description("返回消息体"),
+            status: Status
+        }
+    },
+    menu_treelist_simple_button: {
+        request: {
+            query: {
+            }
+        },
+        response: {
+            schema: Joi.object({
+                code: Joi.number().integer().description("返回代码"),
+                message: Joi.string().description('返回信息'),
+                data: Joi.array().meta({ className: PREFIX + "ListResponseData" }).allow(['', null])
+            }).meta({ className: PREFIX + "ListResponse" }).required().description("返回消息体"),
+            status: Status
+        }
+    },
+    menu_treelist_simple_no_button: {
+        request: {
+            query: {
             }
         },
         response: {
