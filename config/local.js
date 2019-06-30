@@ -18,7 +18,7 @@ module.exports = {
         "password": "123456",
         "options": {
             "host": "localhost",
-            "port": 3307,
+            "port": 3306,
             "dialect": "mysql",
             "logging": true,
             "pool": {
@@ -61,8 +61,9 @@ module.exports = {
     "api_log": {
         //是否记录日志
         "on_off": true,
-        //不记录日志的路由地址。模糊匹配
+        //不记录日志的路由地址。开头匹配
         "no_url": [
+            "/favicon",
             "/swagger",
             "/documentation"
         ],

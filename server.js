@@ -137,6 +137,8 @@ module.exports = function (settings, bootstrap) {
         let startTime = request.headers['req-start'];
         var endTime = getNow();//设置请求结束时间
 
+        if (!request.response.headers)
+            request.response.headers = {}
         //if (request.response.headers) {
         request.response.headers['req-id'] = request.info.id;
         request.response.headers['req-start'] = startTime;

@@ -59,8 +59,9 @@ module.exports = {
     "api_log": {
         //是否记录日志
         "on_off": true,
-        //不记录日志的路由地址。模糊匹配
+        //不记录日志的路由地址。开头匹配
         "no_url": [
+            "/favicon",
             "/swagger",
             "/documentation"
         ],
