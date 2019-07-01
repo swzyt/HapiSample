@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+
+  local-mssql:
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    container_name: local-mssql
+    ports:
+      - 14333:1433
+    # volumes:
+    #   - /D/WorkSpace/Framework/HapiSimple/docker/mysql/master/other:/var/lib/mysql
+    #   - /D/WorkSpace/Framework/HapiSimple/docker/mysql/master/config/mysqld.conf:/etc/mysql/mysql.conf.d/mysqld.cnf
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Suwei123!@#
+    restart: always
+    networks:
+      - local-mssql-ms-network
+
+networks:
+  local-mssql-ms-network:
+    driver: bridge
