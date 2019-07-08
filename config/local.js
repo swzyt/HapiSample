@@ -48,13 +48,12 @@ module.exports = {
     //rabbitmq配置
     rabbitmq: {
         hosts: [
-            "amqp://admin:admin@localhost:5672",//指定帐号密码及端口
             "amqp://admin:admin@localhost:5673",//指定帐号密码及端口
-            "amqp://admin:admin@localhost:5674",//指定帐号密码及端口
+            "amqp://admin:admin@localhost:5672",//指定帐号密码及端口
+            // "amqp://admin:admin@localhost:5674",//指定帐号密码及端口
             //"amqp://localhost"//默认
         ],
         options: {
-            reConnectCount: 10//断开重连次数限制
         }
     },
     //接口日志记录

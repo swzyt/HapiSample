@@ -50,19 +50,34 @@ module.exports = function (settings, bootstrap) {
         {
             plugin: require('hapi-swagger'),//api文档插件
             options: {
-                lang: "zh-cn",//中文显示
-                // 定义接口以tags属性为分类【定义分类的大标题】,给./routes路由的配置config:tags使用
-                //grouping: "tags",
-                // 标签，用于对应路由config定义的tags进行归类
-                tags: [
-                    { "name": "jwt", "description": "json web token" },//此处配置各模块描述内容
-                    { "name": "system", "description": "系统设置" },
-                    { "name": "storage", "description": "文件服务" }
-                ],
                 info: {
                     title: 'HapiSimple 接口文档',
                     version: "1.0.0",
+                    description: 'HapiSimple 接口文档',
+                    'contact': {
+                        'name': 'Suwei',
+                        'email': 'suwei.me@qq.com'
+                    }
                 },
+                lang: "zh-cn",//中文显示
+                // 定义接口以tags属性为分类【定义分类的大标题】,给./routes路由的配置config:tags使用
+                grouping: "tags",
+                // 标签，用于对应路由config定义的tags进行归类
+                tags: [
+                    // { "name": "jwt", "description": "json web token" },//此处配置各模块描述内容
+                    // { "name": "system", "description": "系统设置" },
+                    // { "name": "storage", "description": "文件服务" }
+
+                    { "name": "auth", "description": "身份验证" },
+                    { "name": "storage", "description": "文件服务" },
+                    { "name": "system-app", "description": "系统-app" },
+                    { "name": "system-menu", "description": "系统-菜单" },
+                    { "name": "system-button", "description": "系统-按钮" },
+                    { "name": "system-role", "description": "系统-角色" },
+                    { "name": "system-user", "description": "系统-用户" },
+                ],
+                basePath: '/v1/api',
+                //pathPrefixSize: 20,
                 securityDefinitions: {//api文档头部输入token，以便测试
                     'jwt': {
                         'type': 'apiKey',
@@ -78,7 +93,10 @@ module.exports = function (settings, bootstrap) {
     Server.register(pluginsArray);
 
     //jwt认证自定义方法
-    var validate = function (decoded, request) {
+    var validate = function (decoded, request, h) {
+        //var validate = function () {
+        console.log(arguments);
+        //return true;
 
         //此处可验证当前接口请求人与token拥有着是否一致，且token是否在有效期内
         //目前只验证了token有效期

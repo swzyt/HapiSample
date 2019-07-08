@@ -2,19 +2,20 @@ var Joi = require('joi');
 var Boom = require('boom');
 var JWT = require('jsonwebtoken');
 var settings = require("../../settings")
+
 module.exports = function (server, models, oauth, db) {
 
     server.route([
         {
-            method: ['GET'],
+            method: ['POST'],
             path: '/jwt/auth',
             config: {
                 auth: false,
-                tags: ['api'],
+                tags: ['api', 'auth'],
                 description: '根据app_id、app_secret及用户账号密码 获取授权',
                 notes: '根据app_id、app_secret及用户账号密码 获取授权',
                 validate: {
-                    query: {
+                    payload: {
                         app_id: Joi.string().required().description('app_id'),
                         app_secret: Joi.string().required().description('app_secret'),
                         user_account: Joi.string().required().description('用户账号'),
@@ -34,10 +35,14 @@ module.exports = function (server, models, oauth, db) {
                     }).meta({ className: "GetResponse" }).required().description("返回消息体")
                 },
                 handler: function (request, h) {
-                    let app_id = request.query.app_id;
-                    let app_secret = request.query.app_secret;
-                    let user_account = request.query.user_account;
-                    let user_password = request.query.user_password;
+                    let app_id = request.payload.app_id;
+                    let app_secret = request.payload.app_secret;
+                    let user_account = request.payload.user_account;
+                    let user_password = request.payload.user_password;
+
+                    if (!(app_id && app_secret && user_account && user_password)) {
+                        return h.error(Boom.badRequest("参数有误"));
+                    }
 
                     //此处验证app id和secret是否正确
                     var app_option = {

@@ -20,6 +20,12 @@ services:
 
     # volumes:
     #   - /D/DockerFileSystem/rabbit:/var/lib/rabbitmq
+    # 心跳检测
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://127.0.0.1:5672"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
     ports:
       # web管理界面端口
       - "15672:15672"
@@ -52,9 +58,9 @@ services:
 
       # 以下配置为用户自定义镜像支持的命令，官方镜像不支持
       # https://github.com/bijukunjummen/docker-rabbitmq-cluster
-      - CLUSTERED=true
-      - CLUSTER_WITH=local-rabbitmq1
-      - RAM_NODE=true
+      # - CLUSTERED=true
+      # - CLUSTER_WITH=local-rabbitmq1
+      # - RAM_NODE=true
 
     # volumes:
     #   - /D/DockerFileSystem/rabbit:/var/lib/rabbitmq
@@ -94,9 +100,9 @@ services:
 
       # 以下配置为用户自定义镜像支持的命令，官方镜像不支持
       # https://github.com/bijukunjummen/docker-rabbitmq-cluster
-      - CLUSTERED=true
-      - CLUSTER_WITH=local-rabbitmq1
-      - RAM_NODE=true
+      # - CLUSTERED=true
+      # - CLUSTER_WITH=local-rabbitmq1
+      # - RAM_NODE=true
       
     links:
       - local-rabbitmq1

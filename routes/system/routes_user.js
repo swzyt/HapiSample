@@ -9,7 +9,7 @@ module.exports = function (server, models) {
             path: '/system/users',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-user'],
                 description: '分页方式获取用户列表信息',
                 validate: models.system.user.validator.list.request,
                 notes: '分页方式获取用户列表信息',
@@ -22,7 +22,7 @@ module.exports = function (server, models) {
             path: '/system/users',
             config: {
                 auth: false,
-                tags: ['api'],
+                tags: ['api', 'system-user'],
                 description: '创建新的用户信息',
                 validate: models.system.user.validator.create.request,
                 notes: 'My route notes',
@@ -35,7 +35,7 @@ module.exports = function (server, models) {
             path: '/system/users/{user_id}',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-user'],
                 description: '获取指定标识的用户信息',
                 validate: models.system.user.validator.get.request,
                 notes: 'My route notes',
@@ -48,7 +48,7 @@ module.exports = function (server, models) {
             path: '/system/users/{user_id}',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-user'],
                 description: '更新指定标识的用户信息',
                 validate: models.system.user.validator.put.request,
                 notes: 'My route notes',
@@ -61,7 +61,7 @@ module.exports = function (server, models) {
             path: '/system/users/update_batch',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-user'],
                 description: '更新批量',
                 validate: models.system.user.validator.update_batch.request,
                 notes: 'My route notes',
@@ -74,7 +74,7 @@ module.exports = function (server, models) {
             path: '/system/users/{user_id}',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-user'],
                 description: '删除指定标识的用户信息',
                 validate: models.system.user.validator.delete.request,
                 notes: 'My route notes',
@@ -87,7 +87,7 @@ module.exports = function (server, models) {
             path: '/system/users/delete_batch',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-user'],
                 description: '删除批量',
                 validate: models.system.user.validator.delete_batch.request,
                 notes: 'My route notes',

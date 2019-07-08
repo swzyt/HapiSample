@@ -9,7 +9,7 @@ module.exports = function (server, models) {
             path: '/system/apps',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-app'],
                 description: '分页方式获取应用列表信息',
                 validate: models.system.app.validator.list.request,
                 notes: '分页方式获取应用列表信息',
@@ -22,7 +22,7 @@ module.exports = function (server, models) {
             path: '/system/apps',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-app'],
                 description: '创建新的应用信息',
                 validate: models.system.app.validator.create.request,
                 notes: 'My route notes',
@@ -35,7 +35,7 @@ module.exports = function (server, models) {
             path: '/system/apps/{app_id}',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-app'],
                 description: '获取指定标识的应用信息',
                 validate: models.system.app.validator.get.request,
                 notes: 'My route notes',
@@ -48,7 +48,7 @@ module.exports = function (server, models) {
             path: '/system/apps/{app_id}',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-app'],
                 description: '更新指定标识的应用信息',
                 validate: models.system.app.validator.put.request,
                 notes: 'My route notes',
@@ -61,7 +61,7 @@ module.exports = function (server, models) {
             path: '/system/apps/update_batch',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-app'],
                 description: '更新批量',
                 validate: models.system.app.validator.update_batch.request,
                 notes: 'My route notes',
@@ -74,7 +74,7 @@ module.exports = function (server, models) {
             path: '/system/apps/{app_id}',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-app'],
                 description: '删除指定标识的应用信息',
                 validate: models.system.app.validator.delete.request,
                 notes: 'My route notes',
@@ -87,7 +87,7 @@ module.exports = function (server, models) {
             path: '/system/apps/delete_batch',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-app'],
                 description: '删除批量',
                 validate: models.system.app.validator.delete_batch.request,
                 notes: 'My route notes',

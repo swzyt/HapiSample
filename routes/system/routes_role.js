@@ -9,7 +9,7 @@ module.exports = function (server, models) {
             path: '/system/roles',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-role'],
                 description: '分页方式获取角色列表信息',
                 validate: models.system.role.validator.list.request,
                 notes: '分页方式获取角色列表信息',
@@ -22,7 +22,7 @@ module.exports = function (server, models) {
             path: '/system/roles',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-role'],
                 description: '创建新的角色信息',
                 validate: models.system.role.validator.create.request,
                 notes: 'My route notes',
@@ -35,7 +35,7 @@ module.exports = function (server, models) {
             path: '/system/roles/{role_id}',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-role'],
                 description: '获取指定标识的角色信息',
                 validate: models.system.role.validator.get.request,
                 notes: 'My route notes',
@@ -48,7 +48,7 @@ module.exports = function (server, models) {
             path: '/system/roles/{role_id}',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-role'],
                 description: '更新指定标识的角色信息',
                 validate: models.system.role.validator.put.request,
                 notes: 'My route notes',
@@ -61,7 +61,7 @@ module.exports = function (server, models) {
             path: '/system/roles/update_batch',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-role'],
                 description: '更新批量',
                 validate: models.system.role.validator.update_batch.request,
                 notes: 'My route notes',
@@ -74,7 +74,7 @@ module.exports = function (server, models) {
             path: '/system/roles/{role_id}',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-role'],
                 description: '删除指定标识的角色信息',
                 validate: models.system.role.validator.delete.request,
                 notes: 'My route notes',
@@ -87,7 +87,7 @@ module.exports = function (server, models) {
             path: '/system/roles/delete_batch',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-role'],
                 description: '删除批量',
                 validate: models.system.role.validator.delete_batch.request,
                 notes: 'My route notes',

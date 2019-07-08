@@ -18,7 +18,7 @@ module.exports = function (server, models) {
             path: '/storage/files/upload',
             config: {
                 auth: false,
-                tags: ['api'],
+                tags: ['storage'],
                 description: '获取上传文件的表单',
                 notes: 'My route notes',
                 handler: function (request, h) {
@@ -49,7 +49,7 @@ module.exports = function (server, models) {
             path: '/storage/files/upload',
             config: {
                 auth: false,
-                tags: ['api'],
+                tags: ['storage'],
                 description: '上传文件的处理程序，支持多文件上传',
                 notes: '上传文件的处理程序，支持多文件上传',
                 payload: {
@@ -143,7 +143,7 @@ module.exports = function (server, models) {
             path: '/storage/files/{file_name}',
             config: {
                 auth: false,
-                tags: ['api'],
+                tags: ['storage'],
                 description: '获取指定标识的文件',
                 notes: 'My route notes',
                 validate: {

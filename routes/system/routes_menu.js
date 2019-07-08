@@ -9,7 +9,7 @@ module.exports = function (server, models) {
             path: '/system/menus',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-menu'],
                 description: '分页方式获取菜单列表信息',
                 validate: models.system.menu.validator.list.request,
                 notes: '分页方式获取菜单列表信息',
@@ -22,7 +22,7 @@ module.exports = function (server, models) {
             path: '/system/menus/menu_treelist_full',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-menu'],
                 description: '获取菜单树列表',
                 validate: models.system.menu.validator.menu_treelist_full.request,
                 notes: '获取菜单树列表',
@@ -35,7 +35,7 @@ module.exports = function (server, models) {
             path: '/system/menus/menu_treelist_simple_button',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-menu'],
                 description: '获取菜单树列表',
                 validate: models.system.menu.validator.menu_treelist_simple_button.request,
                 notes: '获取菜单树列表',
@@ -48,7 +48,7 @@ module.exports = function (server, models) {
             path: '/system/menus/menu_treelist_simple_no_button',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-menu'],
                 description: '获取菜单树列表',
                 validate: models.system.menu.validator.menu_treelist_simple_no_button.request,
                 notes: '获取菜单树列表',
@@ -61,7 +61,7 @@ module.exports = function (server, models) {
             path: '/system/menus',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-menu'],
                 description: '创建新的菜单信息',
                 validate: models.system.menu.validator.create.request,
                 notes: 'My route notes',
@@ -74,7 +74,7 @@ module.exports = function (server, models) {
             path: '/system/menus/{menu_id}',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-menu'],
                 description: '获取指定标识的菜单信息',
                 validate: models.system.menu.validator.get.request,
                 notes: 'My route notes',
@@ -87,7 +87,7 @@ module.exports = function (server, models) {
             path: '/system/menus/{menu_id}',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-menu'],
                 description: '更新指定标识的菜单信息',
                 validate: models.system.menu.validator.put.request,
                 notes: 'My route notes',
@@ -100,7 +100,7 @@ module.exports = function (server, models) {
             path: '/system/menus/update_batch',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-menu'],
                 description: '更新批量',
                 validate: models.system.menu.validator.update_batch.request,
                 notes: 'My route notes',
@@ -113,7 +113,7 @@ module.exports = function (server, models) {
             path: '/system/menus/{menu_id}',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-menu'],
                 description: '删除指定标识的菜单信息',
                 validate: models.system.menu.validator.delete.request,
                 notes: 'My route notes',
@@ -126,7 +126,7 @@ module.exports = function (server, models) {
             path: '/system/menus/delete_batch',
             config: {
                 auth: 'jwt',
-                tags: ['api'],
+                tags: ['api', 'system-menu'],
                 description: '删除批量',
                 validate: models.system.menu.validator.delete_batch.request,
                 notes: 'My route notes',

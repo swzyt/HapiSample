@@ -4,7 +4,7 @@ const PAGE_SIZE = 10;
 
 const getBlogs = async () => {
 
-    for (let number = 1; number <= 200; number++) {
+    for (let number = 1; number <= 1; number++) {
 
         try {
             let cnblogs_result = await api.getBlogs(number, PAGE_SIZE)

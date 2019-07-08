@@ -58,7 +58,7 @@ module.exports = {
                 code: Joi.number().integer().description("返回代码"),
                 message: Joi.string().description('返回信息'),
                 total: Joi.number().integer().description('数据总数'),
-                data: Joi.array().items(Joi.object(ResponseModel).meta({ className: PREFIX + "ListResponseData" }))
+                data: Joi.array().items(Joi.object(ResponseModel).allow(null).meta({ className: PREFIX + "ListResponseData" }))
             }).meta({ className: PREFIX + "ListResponse" }).required().description("返回消息体"),
             status: Status
         }
