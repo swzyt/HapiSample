@@ -31,6 +31,8 @@ var ResponseModel = {
     cron: Joi.string().max(100).allow(['', null]).description('执行计划'),
     description: Joi.string().allow(['', null]).description('描述'),
 
+    logs: Joi.array().allow(['', null]).description('任务日志'),
+
     created_at: Joi.date().description('创建时间'),
     updated_at: Joi.date().description('更新时间')
 };

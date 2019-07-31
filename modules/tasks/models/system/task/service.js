@@ -2,22 +2,28 @@ var _ = require('lodash');
 var moment = require("moment");
 var Boom = require('boom');
 var Service = function (db) {
-    this.db = db;
-    this.attributes = ['task_id', 'name', 'type', 'method', 'valid', 'status', 'start_time', 'end_time', 'cron', 'description', 'created_at', 'updated_at'];
+    let self = this;
+    self.db = db;
+    self.attributes = ['task_id', 'name', 'type', 'method', 'valid', 'status', 'start_time', 'end_time', 'cron', 'description', 'created_at', 'updated_at'];
 
-    this.include = [
+    self.include = [
         {
             //任务日志
-            model: this.db.SystemTaskLog,
+            model: self.db.SystemTaskLog,
             as: "logs",
             required: false
         }
     ]
+
+    //初始化任务
+    self.TaskMgr = require("../../../libs/TaskMgr")(db);
 };
+
 //普通列表
 Service.prototype.list = function (where, page_size, page_number, orderArr) {
 
     var options = {
+        distinct: true,
         attributes: this.attributes,
         include: this.include,
         where: where,
@@ -60,23 +66,12 @@ Service.prototype.delete = function (where) {
             return Boom.notFound("找不到指定标识的数据")
     });
 };
-//删除批量
-Service.prototype.delete_batch = function (where) {
-    //删除角色
-    this.db.SystemTaskRole.destroy({ where: where })
-
-    return this.db.SystemTask.destroy({ where: where })
-};
 //更新单个
 Service.prototype.update = function (where, data) {
 
     var self = this;
 
     return self.db.SystemTask.update(data, { where: where })
-};
-//更新批量
-Service.prototype.update_batch = function (where, data) {
-    return this.db.SystemTask.update(data, { where: where });
 };
 
 module.exports = Service;

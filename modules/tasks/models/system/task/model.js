@@ -30,16 +30,16 @@ module.exports = function (sequelize, DataTypes) {
     status: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      comment: "状态 执行中/暂停/"
+      comment: "状态 running(执行中) / pause(暂停)"
     },
     start_time: {
       type: DataTypes.DATE(),
-      allowNull: false,
+      allowNull: true,
       comment: "开始时间"
     },
     end_time: {
       type: DataTypes.DATE(),
-      allowNull: false,
+      allowNull: true,
       comment: "结束时间"
     },
     cron: {
@@ -49,7 +49,7 @@ module.exports = function (sequelize, DataTypes) {
     },
     description: {
       type: DataTypes.TEXT(),
-      allowNull: false,
+      allowNull: true,
       comment: "任务描述"
     },
   }, {

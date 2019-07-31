@@ -1,13 +1,21 @@
-﻿#modules auth
+﻿#必须要先屏蔽所有的，然后才建立特殊不屏蔽的规则！
+#modules auth
 auth/*
 auth/routes/index.js
 
 !auth/routes/
+!auth/install.bat
 
 #modules tasks
 tasks/*
+tasks/libs/*
+tasks/models/system/api_log
 tasks/models/index.js
 tasks/routes/index.js
 
+!tasks/libs/
+!tasks/libs/TaskMgr.js
 !tasks/models/
 !tasks/routes/
+
+!tasks/install.bat
