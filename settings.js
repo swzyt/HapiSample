@@ -1,5 +1,5 @@
 "use strict";
-var nconf = require('nconf');
+const nconf = require('nconf');
 
 nconf.argv().env();
 
@@ -10,11 +10,21 @@ app_env = app_env.replace(/ /g, '');//去除空格
 
 var config = require('./config/' + app_env + '.js');
 
-config.server.port = process.env.PORT || config.server.port;
+//默认主配置
+config.server = config.modules.main;
 
-console.log("****************************************配置·开始****************************************")
+let module_path = process.cwd();
+let module_name = module_path.split('\\')[module_path.split('\\').length - 1]
+//读取module配置
+if (config.modules[module_name]) {
+    config.server = config.modules[module_name];
+}
+
+// config.server.port = process.env.PORT || config.server.port;
+
+console.log("****************************************配置项****************************************")
 console.log(`当前运行环境: ${app_env}`);
 console.log(`配置项: ${JSON.stringify(config)}`);
-console.log("****************************************配置·结束****************************************")
+console.log("****************************************配置项****************************************")
 
 module.exports = config;

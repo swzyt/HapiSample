@@ -75,8 +75,9 @@ module.exports = function (settings, bootstrap) {
                     { "name": "system-button", "description": "系统-按钮" },
                     { "name": "system-role", "description": "系统-角色" },
                     { "name": "system-user", "description": "系统-用户" },
+                    { "name": "system-task", "description": "系统-定时任务" },
                 ],
-                basePath: '/v1/api',
+                // basePath: '/v1/api',
                 //pathPrefixSize: 20,
                 securityDefinitions: {//api文档头部输入token，以便测试
                     'jwt': {

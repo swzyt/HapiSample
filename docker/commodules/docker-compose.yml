@@ -1,0 +1,24 @@
+# docker-compose up --build
+version: '3'
+
+services:
+
+  commodules:
+    container_name: commodules
+    build: .
+    image: commodules:v2
+    # command: npm install
+    # volumes:
+    #   - local-com-package:/home/app/api/share/modules
+    # networks: 
+    #   - local-comnet
+    # restart: always
+
+# volumes:
+#   local-com-package:
+
+# networks:
+#   # 引用外部api网络
+#   local-comnet:
+#     external:
+#       name: hapisimple_local-comnet

@@ -1,7 +1,7 @@
 var Joi = require('joi');
 var Boom = require('boom');
 var JWT = require('jsonwebtoken');
-var settings = require("../../settings")
+var settings = require("../../../../settings")
 
 module.exports = function (server, models, oauth, db) {
 

@@ -29,6 +29,9 @@ services:
 
     # 连接yml文件外运行的容器
     external_links:
+      # 连接现有mongo容器
+      - local-mongo
+
       # 连接现有redis容器
       - local-redis
 

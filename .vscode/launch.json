@@ -19,6 +19,12 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "test tasks-test",
+            "program": "${workspaceFolder}\\libs\\tasks\\test.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "test cnblogs-consumer",
             "program": "${workspaceFolder}\\libs\\cnblogs\\V3\\rabbit-consumer.js"
         },

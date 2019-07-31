@@ -1,8 +1,22 @@
 module.exports = {
     //服务配置
     "server": {
-        "host": "localhost",
-        "port": 8888
+
+    },
+    //模块配置
+    "modules": {
+        main: {
+            "host": "localhost",
+            "port": 8888
+        },
+        auth: {
+            "host": "localhost",
+            "port": 8887
+        },
+        tasks: {
+            "host": "localhost",
+            "port": 8889
+        }
     },
     //jwt认证配置
     "jwt": {

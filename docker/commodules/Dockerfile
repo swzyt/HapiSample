@@ -1,5 +1,5 @@
 #制作 node_modules 公共镜像
-#docker build --rm -t commodules:v1 .
+#docker build --rm -t -d commodules:v1 .
 FROM node:8
 
 MAINTAINER suwei
@@ -13,4 +13,4 @@ WORKDIR /home/app/api/share/modules
 
 COPY . /home/app/api/share/modules
 
-RUN npm install
+RUN npm install && node

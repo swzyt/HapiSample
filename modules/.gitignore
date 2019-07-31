@@ -1,0 +1,13 @@
+﻿#modules auth
+auth/*
+auth/routes/index.js
+
+!auth/routes/
+
+#modules tasks
+tasks/*
+tasks/models/index.js
+tasks/routes/index.js
+
+!tasks/models/
+!tasks/routes/
