@@ -12,11 +12,7 @@ module.exports = function (db) {
                 if (tasks && tasks.length > 0) {
                     tasks
                         .filter(item => {
-                            return item.valid &&
-                                item.status == "running" &&
-                                item.cron &&
-                                (!item.start_time || (moment().isAfter(moment(item.start_time)))) &&
-                                (!item.end_time || (moment().isBefore(moment(item.end_time))))
+                            return self.checkTaskItem(item)
                         })
                         .map(item => {
                             self.Run(item);
@@ -38,15 +34,32 @@ module.exports = function (db) {
          * 检测任务是否存在
          * @param {*} id 
          */
-        checkTask(id) {
+        checkTaskList(id) {
             return id && this.task_list[this.getTaskId(id)]
         },
         /**
+         * 检测任务有效性
+         * @param {*} item 
+         */
+        checkTaskItem(item) {
+            return item &&
+                item.valid &&
+                item.status == "running" &&
+                item.cron &&
+                (!item.start_time || (moment().isAfter(moment(item.start_time)))) &&
+                (!item.end_time || (moment().isBefore(moment(item.end_time))))
+        },
+        /**
          * 运行任务
-         * @param {*} id 
+         * @param {*} item 
          */
         Run: function (item) {
             let self = this;
+
+            if (!self.checkTaskItem(item)) {
+                return;
+            }
+
             let task_id = this.getTaskId(item.task_id);
 
             let job_rule = { rule: item.cron };
@@ -58,16 +71,19 @@ module.exports = function (db) {
             }
 
             let job = schedule.scheduleJob(task_id, job_rule, function () {
-
+                //运行日志
                 let task_log = self.getLogItem(item.task_id, job);
+
                 task_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
                 task_log.content = job.name;
+
                 self.saveLog(task_log)
             });
 
+            //创建日志
             let create_log = self.getLogItem(item.task_id, job);
             create_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
-            create_log.content = "创建任务";
+            create_log.content = "启动任务";
             self.saveLog(create_log)
 
             self.task_list[task_id] = job;
@@ -79,14 +95,20 @@ module.exports = function (db) {
          */
         ReSchedule: function (id, spec) {
             let task_id = this.getTaskId(id);
-            if (this.checkTask(id)) {
+            if (this.checkTaskList(id)) {
                 this.task_list[task_id].reschedule(spec)
             }
         },
         ReStart: function (id) {
             let task_id = this.getTaskId(id);
-            if (this.checkTask(id)) {
+            if (this.checkTaskList(id)) {
                 this.task_list[task_id].cancel(true);
+
+                //重启日志
+                let restart_log = this.getLogItem(id, this.task_list[task_id]);
+                restart_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
+                restart_log.content = "重启任务";
+                this.saveLog(restart_log)
             }
         },
         /**
@@ -95,8 +117,13 @@ module.exports = function (db) {
          */
         Cancel: function (id) {
             let task_id = this.getTaskId(id);
-            if (this.checkTask(id)) {
+            if (this.checkTaskList(id)) {
                 this.task_list[task_id].cancel();
+                //取消日志
+                let cancel_log = this.getLogItem(id, this.task_list[task_id]);
+                cancel_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
+                cancel_log.content = "取消任务";
+                this.saveLog(cancel_log)
             }
         },
         /**
@@ -105,8 +132,13 @@ module.exports = function (db) {
          */
         CancelNext: function (id) {
             let task_id = this.getTaskId(id);
-            if (this.checkTask(id)) {
+            if (this.checkTaskList(id)) {
                 this.task_list[task_id].cancelNext(true);
+                //取消日志
+                let cancel_log = this.getLogItem(id, this.task_list[task_id]);
+                cancel_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
+                cancel_log.content = "取消最近一次的执行任务";
+                this.saveLog(cancel_log)
             }
         },
         /**
@@ -115,11 +147,19 @@ module.exports = function (db) {
          */
         Remove: function (id) {
             let task_id = this.getTaskId(id);
-            if (this.checkTask(id)) {
+            if (this.checkTaskList(id)) {
                 this.task_list[task_id].cancel();
+
+                //取消日志
+                let cancel_log = this.getLogItem(id, this.task_list[task_id]);
+                cancel_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
+                cancel_log.content = "取消任务并从列表中移除";
+                this.saveLog(cancel_log)
+
                 delete this.task_list[task_id]
             }
         },
+        //实例化日志对象
         getLogItem: function (task_id, job) {
             return {
                 task_id,
@@ -129,11 +169,13 @@ module.exports = function (db) {
 
             }
         },
+        //保存日志
         saveLog: function (data) {
             this.db.SystemTaskLog.build(data).save();
         }
     }
 
+    //初始化任务队列
     TaskMgr.init();
 
     return TaskMgr;
