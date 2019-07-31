@@ -14,6 +14,7 @@ tasks/models/index.js
 tasks/routes/index.js
 
 !tasks/libs/
+!tasks/libs/restler.js
 !tasks/libs/TaskMgr.js
 !tasks/models/
 !tasks/routes/

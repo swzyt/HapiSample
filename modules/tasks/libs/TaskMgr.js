@@ -1,5 +1,6 @@
 const schedule = require("node-schedule");
 const moment = require("moment");
+const restler = require("./restler")
 
 module.exports = function (db) {
     var TaskMgr = {
@@ -70,12 +71,29 @@ module.exports = function (db) {
                 job_rule.end = item.end_time;
             }
 
-            let job = schedule.scheduleJob(task_id, job_rule, function () {
+            let job = schedule.scheduleJob(task_id, job_rule, async function () {
                 //运行日志
                 let task_log = self.getLogItem(item.task_id, job);
 
                 task_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
-                task_log.content = job.name;
+
+                try {
+                    // let fun = require("D:/WorkSpace/Framework/HapiSimple/tasks/index.js")
+                    if (item.type == "local") {
+                        let fun = require(item.path);
+                        task_log.content = JSON.stringify(await fun(task_log.task_id + " " + task_log.start_time));
+                    }
+                    else if (item.type == "remote") {
+                        task_log.content = await restler[item.method](item.path)
+                    }
+                }
+                catch (err) {
+                    task_log.content = JSON.stringify({
+                        code: err.code,
+                        message: err.message,
+                        stack: err.stack
+                    })
+                }
 
                 self.saveLog(task_log)
             });

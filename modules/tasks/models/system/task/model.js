@@ -22,6 +22,17 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: true,
       comment: "远程任务调用。get/post/delete/put"
     },
+    path: {
+      type: DataTypes.STRING(1000),
+      allowNull: false,
+      comment: "地址"
+    },
+    parallel_number: {
+      type: DataTypes.INTEGER(11),
+      allowNull: true,
+      defaultValue: 1,
+      comment: "并行数"
+    },
     valid: {
       type: DataTypes.BOOLEAN(),
       allowNull: false,
