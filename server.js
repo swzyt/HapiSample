@@ -95,9 +95,9 @@ module.exports = function (settings, bootstrap) {
 
     //jwt认证自定义方法
     var validate = function (decoded, request, h) {
-        //var validate = function () {
-        console.log(arguments);
-        //return true;
+        // var validate = function () {
+        // console.log(arguments);
+        // return true;
 
         //此处可验证当前接口请求人与token拥有着是否一致，且token是否在有效期内
         //目前只验证了token有效期
