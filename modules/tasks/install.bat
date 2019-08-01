@@ -8,7 +8,7 @@ cd /d %~dp0
 echo "clean all"
 
 rmdir /s/q config
-rmdir /s/q libs
+::rmdir /s/q libs
 rmdir /s/q node_modules
 rmdir /s/q utils
 
