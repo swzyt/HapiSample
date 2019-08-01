@@ -3,7 +3,7 @@ var path = require('path');
 
 module.exports = function (db) {
 
-    const MODELS_FOLDER = "models";
+    const MODELS_FOLDER = path.resolve(process.cwd(), './models');
 
     var result = {};
 
@@ -47,13 +47,17 @@ module.exports = function (db) {
 
                         if (has_service && has_controller && has_validator) {
 
-                            var Service = require(path.join("..", service_file));
-                            var Controller = require(path.join("..", controller_file));
+                            // var Service = require(path.join("..", service_file));
+                            // var Controller = require(path.join("..", controller_file));
+                            var Service = require(service_file);
+                            var Controller = require(controller_file);
 
                             var service = new Service(db);
                             var controller = new Controller(service);
 
-                            var validator = require(path.join("..", validator_file));
+                            // var validator = require(path.join("..", validator_file));
+                            var validator = require(validator_file);
+
                             // if (validator.get && validator.get.request) {
                             //     if (validator.get.request.query) {
                             //         validator.get.request.query.check_sign = Joi.string().required().description('签名')
@@ -70,12 +74,12 @@ module.exports = function (db) {
                         }
 
                     } catch (e) {
-                        /* console.log(e.message)
+                        console.log(e.message)
 
                         if (e.errno != -4058) {
                             console.log(model_name);
                             console.log(e);
-                        } */
+                        }
                     }
                 });
         });

@@ -5,62 +5,88 @@
 cd /d %~dp0
 
 ::清除之前的符号链接
-echo "clean all"
+echo "****************** clean all ******************"
 
+echo "config"
 rmdir /s/q config
-::rmdir /s/q libs
-rmdir /s/q node_modules
-rmdir /s/q utils
 
-del /s/q models\index.js
+echo "libs"
+rmdir /s/q libs\api_logs
+del /s/q libs\cache.js
+del /s/q libs\db.js
+del /s/q libs\defaultModel.js
+del /s/q libs\mongodb.js
+del /s/q libs\page_size_number.js
+del /s/q libs\status.js
+
+echo "node_modules"
+rmdir /s/q node_modules
+
+echo "models"
+rmdir /s/q models
+
+echo "routes"
 del /s/q routes\index.js
 
+echo "utils"
+rmdir /s/q utils
+
+echo "root"
 del /s/q bootstrap.js
 del /s/q index.js
 del /s/q server.js
 del /s/q settings.js
 del /s/q package.json
 
+echo "****************** mklink ******************"
+:: /H      创建硬链接而非符号链接。
+:: /j      创建目录联接。
+
 echo "config"
-mklink config /j ..\..\config
+mklink config /J ..\..\config
 
 echo "libs"
 mkdir libs
-xcopy ..\..\libs\api_logs\*.* libs\api_logs /s/d/e
-copy /y ..\..\libs\cache.js libs\cache.js
-copy /y ..\..\libs\db.js libs\db.js
-copy /y ..\..\libs\defaultModel.js libs\defaultModel.js
-copy /y ..\..\libs\mongodb.js libs\mongodb.js
-copy /y ..\..\libs\page_size_number.js libs\page_size_number.js
-copy /y ..\..\libs\status.js libs\status.js
+mklink libs\api_logs /J ..\..\libs\api_logs
+mklink libs\cache.js /H ..\..\libs\cache.js
+mklink libs\db.js /H ..\..\libs\db.js
+mklink libs\defaultModel.js /H ..\..\libs\defaultModel.js
+mklink libs\mongodb.js /H ..\..\libs\mongodb.js
+mklink libs\page_size_number.js /H ..\..\libs\page_size_number.js
+mklink libs\status.js /H ..\..\libs\status.js
 
 echo "node_modules"
-mklink node_modules /j ..\..\node_modules
+mklink node_modules /J ..\..\node_modules
 
 echo "models"
 mkdir models
-copy /y ..\..\models\index.js models\index.js
-xcopy ..\..\models\system\api_log\model.js models\system\api_log\model.js /s/d/e
-xcopy ..\..\models\system\app\model.js models\system\app\model.js /s/d/e
-xcopy ..\..\models\system\user\model.js models\system\user\model.js /s/d/e
-xcopy ..\..\models\system\role\model.js models\system\role\model.js /s/d/e
-xcopy ..\..\models\system\role_permission\model.js models\system\role_permission\model.js /s/d/e
-xcopy ..\..\models\system\user_role\model.js models\system\user_role\model.js /s/d/e
+mkdir models\system
+mkdir models\system\app
+mkdir models\system\user
+mkdir models\system\role
+mkdir models\system\role_permission
+mkdir models\system\user_role
+
+mklink models\system\api_log /J ..\..\models\system\api_log
+mklink models\system\app\model.js /H ..\..\models\system\app\model.js
+mklink models\system\user\model.js /H ..\..\models\system\user\model.js
+mklink models\system\role\model.js /H ..\..\models\system\role\model.js
+mklink models\system\role_permission\model.js /H ..\..\models\system\role_permission\model.js
+mklink models\system\user_role\model.js /H ..\..\models\system\user_role\model.js
+mklink models\index.js /H ..\..\models\index.js
 
 echo "routes"
-mkdir routes
-copy /y ..\..\routes\index.js routes\index.js
-
-echo "root"
-copy /y ..\..\bootstrap.js bootstrap.js
-copy /y ..\..\index.js index.js
-copy /y ..\..\server.js server.js
-copy /y ..\..\settings.js settings.js
-copy /y ..\..\package.json package.json
+mklink routes\index.js /H ..\..\routes\index.js
 
 echo "utils"
-mkdir utils
-copy /y ..\..\utils\moment.js utils\moment.js
+mklink utils /J ..\..\utils
+
+echo "root"
+mklink bootstrap.js /H ..\..\bootstrap.js
+mklink index.js /H ..\..\index.js
+mklink server.js /H ..\..\server.js
+mklink settings.js /H ..\..\settings.js
+mklink package.json /H ..\..\package.json
 
 ::暂停输出“请按任意键继续…”
 pause

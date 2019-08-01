@@ -5,6 +5,7 @@ auth/routes/index.js
 
 !auth/routes/
 !auth/install.bat
+!auth/install.bat.backup
 
 #modules tasks
 tasks/*
@@ -20,3 +21,4 @@ tasks/routes/index.js
 !tasks/routes/
 
 !tasks/install.bat
+!tasks/install.bat.backup
