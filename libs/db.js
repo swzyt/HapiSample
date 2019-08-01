@@ -4,7 +4,7 @@ var Sequelize = require('sequelize');
 var cache = require('./cache.js');
 
 //定义存放所有数据模块文件的根目录
-var MODULES_FOLDER = 'models';
+var MODULES_FOLDER = path.resolve(__dirname, '../models');
 
 module.exports = function (settings) {
 
@@ -40,7 +40,7 @@ module.exports = function (settings) {
                         })
                         .forEach(function (modelFilename) {
                             var modelPath = path.join(
-                                '..',
+                                // '..',
                                 module_folder,
                                 moduleDirectory,
                                 modelFilename

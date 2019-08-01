@@ -63,7 +63,9 @@ module.exports = {
     rabbitmq: {
         hosts: [
             "amqp://admin:admin@local-rabbitmq1:5672",//指定帐号密码及端口
-            "amqp://localhost"//默认
+            "amqp://admin:admin@local-rabbitmq1:5673",//指定帐号密码及端口
+            "amqp://admin:admin@local-rabbitmq1:5674",//指定帐号密码及端口
+            // "amqp://localhost"//默认
         ],
         options: {
         }

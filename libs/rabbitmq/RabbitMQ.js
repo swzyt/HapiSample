@@ -90,7 +90,8 @@ class RabbitMQ {
                 conn.on("close", (err) => {
                     self.CONN = null;
                     console.info("The RabbitMQ conn is closed!")
-                    reConnect(err)
+                    //手动关闭，不需要重连
+                    // reConnect(err)
                 })
 
                 self.CONN = conn;
@@ -106,7 +107,8 @@ class RabbitMQ {
                     channel.on("close", (err) => {
                         self.CHANNEL = null;
                         console.info("The RabbitMQ channel is closed!")
-                        reConnect(err)
+                        //手动关闭，不需要重连
+                        // reConnect(err)
                     })
 
                     self.CHANNEL = channel;

@@ -1,3 +1,7 @@
 module.exports = function (text) {
-    return "哈哈2" + text;
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            resolve("哈哈2" + text)
+        }, 3000)
+    })
 }
