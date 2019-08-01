@@ -11,13 +11,7 @@ echo "config"
 rmdir /s/q config
 
 echo "libs"
-rmdir /s/q libs\api_logs
-del /s/q libs\cache.js
-del /s/q libs\db.js
-del /s/q libs\defaultModel.js
-del /s/q libs\mongodb.js
-del /s/q libs\page_size_number.js
-del /s/q libs\status.js
+rmdir /s/q libs
 
 echo "node_modules"
 rmdir /s/q node_modules
