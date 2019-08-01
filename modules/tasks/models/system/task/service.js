@@ -5,14 +5,12 @@ var Service = function (db) {
     this.db = db;
     this.attributes = ['task_id', 'name', 'type', 'method', 'path', 'parallel_number', 'valid', 'status', 'start_time', 'end_time', 'cron', 'description', 'created_at', 'updated_at'];
 
-    this.include = [
-        {
-            //任务日志
-            model: this.db.SystemTaskLog,
-            as: "logs",
-            required: false
-        }
-    ]
+    this.include = [{
+        //任务日志
+        model: this.db.SystemTaskLog,
+        as: "logs",
+        required: false
+    }]
 
     //初始化任务
     this.TaskMgr = require("../../../libs/TaskMgr")(db);
@@ -67,7 +65,7 @@ Service.prototype.delete = function (where) {
         if (item) {
 
             //取消并删除
-            self.TaskMgr.Remove(item.task_id)
+            self.TaskMgr.Cancel(item.task_id)
 
             return item.destroy();
         }
@@ -82,12 +80,9 @@ Service.prototype.update = function (where, data) {
 
     return self.db.SystemTask.update(data, { where: where }).then(result => {
 
-        //重启
-        self.TaskMgr.Cancel(where.task_id)
+        //重启任务
         self.get(where).then(item => {
-            if (item) {
-                self.TaskMgr.Run(item)
-            }
+            self.TaskMgr.ReStart(item)
         })
 
         return result;

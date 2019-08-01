@@ -22,7 +22,7 @@ const get = (url) => {
                     resolve(null)
                 }
                 if (result instanceof Error) {
-                    reject(null)
+                    reject(result)
                 }
 
                 resolve(result)
@@ -44,7 +44,7 @@ const post = (url) => {
                     resolve(null)
                 }
                 if (result instanceof Error) {
-                    reject(null)
+                    reject(result)
                 }
 
                 resolve(result)

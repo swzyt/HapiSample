@@ -1,42 +1,49 @@
 const schedule = require("node-schedule");
 const moment = require("moment");
 const restler = require("./restler")
+const Bagpipe = require('bagpipe');
 
-module.exports = function (db) {
+module.exports = async function (db) {
     var TaskMgr = {
+        /**
+         * 数据库连接对象
+         */
         db,
-
-        init() {
+        /**
+         * 初始化任务列表
+         */
+        async init() {
             let self = this;
 
-            self.db.SystemTask.findAll({ where: { valid: true } }).then(tasks => {
-                if (tasks && tasks.length > 0) {
-                    tasks
-                        .filter(item => {
-                            return self.checkTaskItem(item)
-                        })
-                        .map(item => {
-                            self.Run(item);
-                        })
-                }
-            })
-        },
+            let tasks = await self.db.SystemTask.findAll({ where: { valid: true } })
 
-        task_list: {
+            if (tasks && tasks.length > 0) {
+                tasks
+                    .filter(item => {
+                        return self.checkTaskItem(item)
+                    })
+                    .map(item => {
+                        self.Run(item);
+                    })
+            }
         },
         /**
-         * 拼接任务id key
-         * @param {*} id 
+         * 运行中的任务列表
          */
-        getTaskId(id) {
-            return `task-${id}`;
+        task_list: {},
+        /**
+         * 拼接任务id key
+         * @param {*} task_id 
+         */
+        getTaskKey(task_id) {
+            return `task-${task_id}`;
         },
         /**
          * 检测任务是否存在
-         * @param {*} id 
+         * @param {*} task_id 
          */
-        checkTaskList(id) {
-            return id && this.task_list[this.getTaskId(id)]
+        checkTaskList(task_id) {
+            return task_id && this.task_list[this.getTaskKey(task_id)]
         },
         /**
          * 检测任务有效性
@@ -46,24 +53,32 @@ module.exports = function (db) {
             return item &&
                 item.valid &&
                 item.status == "running" &&
+                item.path &&
                 item.cron &&
-                (!item.start_time || (moment().isAfter(moment(item.start_time)))) &&
-                (!item.end_time || (moment().isBefore(moment(item.end_time))))
+                item.parallel_number &&
+                (!item.start_time || moment().isAfter(moment(item.start_time))) &&
+                (!item.end_time || moment().isBefore(moment(item.end_time)))
         },
         /**
          * 运行任务
          * @param {*} item 
          */
-        Run: function (item) {
+        Run: async function (item) {
             let self = this;
 
+            let task_key = self.getTaskKey(item.task_id);
+
+            //若任务已存在，则先取消并从内存中删除
+            await self.Cancel(item.task_id)
+
+            //检测任务有效性
             if (!self.checkTaskItem(item)) {
-                return;
+                return null;
             }
 
-            let task_id = this.getTaskId(item.task_id);
-
+            //任务执行计划
             let job_rule = { rule: item.cron };
+
             if (item.start_time) {
                 job_rule.start = item.start_time;
             }
@@ -71,130 +86,142 @@ module.exports = function (db) {
                 job_rule.end = item.end_time;
             }
 
-            let job = schedule.scheduleJob(task_id, job_rule, async function () {
-                //运行日志
-                let task_log = self.getLogItem(item.task_id, job);
+            let job = schedule.scheduleJob(task_key, job_rule, async function () {
 
-                task_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
+                const t = async function () {
+                    //运行日志
+                    let task_log = self.getLogItem(item.task_id, job);
 
-                try {
-                    // let fun = require("D:/WorkSpace/Framework/HapiSimple/tasks/index.js")
-                    if (item.type == "local") {
-                        let fun = require(item.path);
-                        task_log.content = JSON.stringify(await fun(task_log.task_id + " " + task_log.start_time));
+                    try {
+                        // let fun = require("D:/WorkSpace/Framework/HapiSimple/tasks/index.js")
+                        //本地任务
+                        if (item.type == "local") {
+                            let fun = require(item.path);
+                            task_log.content = JSON.stringify(await fun());
+                        }
+                        //远程任务
+                        else if (item.type == "remote") {
+                            task_log.content = await restler[item.method](item.path)
+                        }
                     }
-                    else if (item.type == "remote") {
-                        task_log.content = await restler[item.method](item.path)
+                    catch (err) {
+                        //异常日志
+                        task_log.content = JSON.stringify({
+                            code: err.code,
+                            message: err.message,
+                            stack: err.stack
+                        })
                     }
-                }
-                catch (err) {
-                    task_log.content = JSON.stringify({
-                        code: err.code,
-                        message: err.message,
-                        stack: err.stack
-                    })
+
+                    task_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
+
+                    await self.saveLog(task_log)
+
+                    //本次任务执行完毕，执行下一次计划
+                    self.task_list[task_key] && self.task_list[task_key].queue && self.task_list[task_key].queue._next();
+
                 }
 
-                self.saveLog(task_log)
+                //推入任务待执行队列，可控制并行数
+                self.task_list[task_key] && self.task_list[task_key].queue && self.task_list[task_key].queue.push(t)
             });
 
-            //创建日志
-            let create_log = self.getLogItem(item.task_id, job);
-            create_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
-            create_log.content = "启动任务";
-            self.saveLog(create_log)
+            //初始化当前任务执行队列，可控制并行数
+            let queue = new Bagpipe(item.parallel_number || 1)
+            queue.on('full', function (length) {
+                console.warn(`${task_key} 待执行队列长度为: ${length}`);
+            });
 
-            self.task_list[task_id] = job;
+            //保存任务对象
+            self.task_list[task_key] = { job: job, queue: queue };
+
+            //启动任务日志
+            await self.saveNormalLog(item.task_id, "启动任务");
+
+            return null;
         },
         /**
          * 重启任务
-         * @param {*} id 
-         * @param {*} spec 
+         * @param {*} item
          */
-        ReSchedule: function (id, spec) {
-            let task_id = this.getTaskId(id);
-            if (this.checkTaskList(id)) {
-                this.task_list[task_id].reschedule(spec)
-            }
-        },
-        ReStart: function (id) {
-            let task_id = this.getTaskId(id);
-            if (this.checkTaskList(id)) {
-                this.task_list[task_id].cancel(true);
+        ReStart: async function (item) {
+            //先取消
+            await this.Cancel(item.task_id);
 
-                //重启日志
-                let restart_log = this.getLogItem(id, this.task_list[task_id]);
-                restart_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
-                restart_log.content = "重启任务";
-                this.saveLog(restart_log)
-            }
+            //再运行
+            return await this.Run(item);
         },
         /**
          * 取消任务
-         * @param {*} id 
+         * 所有的计划调用将会被取消。当你设置 reschedule 参数为true，然后任务将在之后重新排列。
+         * @param {*} task_id 
          */
-        Cancel: function (id) {
-            let task_id = this.getTaskId(id);
-            if (this.checkTaskList(id)) {
-                this.task_list[task_id].cancel();
+        Cancel: async function (task_id, reschedule = false) {
+            let task_key = this.getTaskKey(task_id);
+            if (this.checkTaskList(task_id)) {
+                this.task_list[task_key].job.cancel(reschedule);
+                delete this.task_list[task_key]
+
                 //取消日志
-                let cancel_log = this.getLogItem(id, this.task_list[task_id]);
-                cancel_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
-                cancel_log.content = "取消任务";
-                this.saveLog(cancel_log)
+                return await this.saveNormalLog(task_id, "取消任务");
             }
+            return null;
         },
         /**
          * 取消最近一次的执行任务
-         * @param {*} id 
+         * 这个方法将能将能取消下一个计划的调度或者任务. 当你设置 reschedule 参数为true，然后任务将在之后重新排列。
+         * @param {*} task_id 
          */
-        CancelNext: function (id) {
-            let task_id = this.getTaskId(id);
-            if (this.checkTaskList(id)) {
-                this.task_list[task_id].cancelNext(true);
-                //取消日志
-                let cancel_log = this.getLogItem(id, this.task_list[task_id]);
-                cancel_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
-                cancel_log.content = "取消最近一次的执行任务";
-                this.saveLog(cancel_log)
+        CancelNext: async function (task_id, reschedule = false) {
+            let task_key = this.getTaskKey(task_id);
+            if (this.checkTaskList(task_id)) {
+                this.task_list[task_key].job.cancelNext(reschedule);
+
+                //取消最近一次的执行任务日志
+                return await this.saveNormalLog(task_id, "取消最近一次的执行任务");
             }
+            return null;
         },
         /**
-         * 取消任务并从列表中移除
-         * @param {*} id 
+         * 实例化日志对象
+         * @param {*} task_id 
+         * @param {*} job 
          */
-        Remove: function (id) {
-            let task_id = this.getTaskId(id);
-            if (this.checkTaskList(id)) {
-                this.task_list[task_id].cancel();
-
-                //取消日志
-                let cancel_log = this.getLogItem(id, this.task_list[task_id]);
-                cancel_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
-                cancel_log.content = "取消任务并从列表中移除";
-                this.saveLog(cancel_log)
-
-                delete this.task_list[task_id]
-            }
-        },
-        //实例化日志对象
         getLogItem: function (task_id, job) {
             return {
                 task_id,
                 start_time: moment().format("YYYY-MM-DD HH:mm:ss"),
                 next_time: job.nextInvocation() ? moment(job.nextInvocation().getTime()).format("YYYY-MM-DD HH:mm:ss") : null,
                 content: job.name
-
             }
         },
-        //保存日志
-        saveLog: function (data) {
-            this.db.SystemTaskLog.build(data).save();
+        /**
+         * 任务操作日志，创建，重启，停止等
+         * @param {*} task_id 
+         * @param {*} content 
+         */
+        saveNormalLog(task_id, content) {
+            let task_key = this.getTaskKey(task_id);
+
+            let log_item = this.getLogItem(task_id, this.task_list[task_key].job);
+
+            log_item.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
+
+            log_item.content = content;
+
+            return this.saveLog(log_item);
+        },
+        /**
+         * 保存日志
+         * @param {*} log_item 
+         */
+        saveLog: function (log_item) {
+            return this.db.SystemTaskLog.build(log_item).save();
         }
     }
 
     //初始化任务队列
-    TaskMgr.init();
+    await TaskMgr.init();
 
     return TaskMgr;
 }
