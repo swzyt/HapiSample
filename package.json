@@ -5,7 +5,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "dev": "NODE_ENV=development nodemon --ignore node_modules/ index",
+    "dev": "nodemon --ignore node_modules/ index",
     "test": "node --inspect index",
     "start": "node index",
     "start-docker-windows": "set NODE_ENV=docker && node index.js",
@@ -25,7 +25,7 @@
     "file",
     "storage"
   ],
-  "author": "suw",
+  "author": "swzyt",
   "license": "ISC",
   "dependencies": {
     "amqplib": "^0.5.3",

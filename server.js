@@ -50,24 +50,12 @@ module.exports = function (settings, bootstrap) {
         {
             plugin: require('hapi-swagger'),//api文档插件
             options: {
-                info: {
-                    title: 'HapiSimple 接口文档',
-                    version: "1.0.0",
-                    description: 'HapiSimple 接口文档',
-                    'contact': {
-                        'name': 'Suwei',
-                        'email': 'suwei.me@qq.com'
-                    }
-                },
+                info: settings.server.swagger.info,//引用配置文件内的swagger信息               
                 lang: "zh-cn",//中文显示
                 // 定义接口以tags属性为分类【定义分类的大标题】,给./routes路由的配置config:tags使用
                 grouping: "tags",
                 // 标签，用于对应路由config定义的tags进行归类
                 tags: [
-                    // { "name": "jwt", "description": "json web token" },//此处配置各模块描述内容
-                    // { "name": "system", "description": "系统设置" },
-                    // { "name": "storage", "description": "文件服务" }
-
                     { "name": "auth", "description": "身份验证" },
                     { "name": "storage", "description": "文件服务" },
                     { "name": "system-app", "description": "系统-app" },
@@ -79,15 +67,22 @@ module.exports = function (settings, bootstrap) {
                 ],
                 // basePath: '/v1/api',
                 //pathPrefixSize: 20,
-                securityDefinitions: {//api文档头部输入token，以便测试
-                    'jwt': {
-                        'type': 'apiKey',
-                        'name': 'Authorization',
-                        'in': 'header'
+                //api文档头部输入token，以便测试
+                securityDefinitions: {
+                    jwt: {
+                        type: 'apiKey',
+                        description: 'json web token',
+                        name: 'Authorization',
+                        in: 'header'
                     }
                 },
                 security: [{ 'jwt': [] }],
-                auth: false
+                auth: false,
+
+                //文档页的路径
+                documentationPath: '/docs',
+                //展开接口文档，可选值 none, list或full
+                expanded: 'none',
             }
         }
     ]

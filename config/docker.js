@@ -7,15 +7,48 @@ module.exports = {
     "modules": {
         main: {
             "host": "localhost",
-            "port": 8888
+            "port": 8888,
+            swagger: {
+                info: {
+                    title: 'HapiSimple Main 接口文档',
+                    version: "1.0.0",
+                    description: 'HapiSimple Main 接口文档',
+                    contact: {
+                        name: 'swzyt',
+                        email: 'suwei.me@qq.com'
+                    }
+                },
+            }
         },
         auth: {
             "host": "localhost",
-            "port": 8887
+            "port": 8887,
+            swagger: {
+                info: {
+                    title: 'HapiSimple Auth 接口文档',
+                    version: "1.0.0",
+                    description: 'HapiSimple Auth 接口文档',
+                    contact: {
+                        name: 'swzyt',
+                        email: 'suwei.me@qq.com'
+                    }
+                },
+            }
         },
         tasks: {
             "host": "localhost",
-            "port": 8889
+            "port": 8889,
+            swagger: {
+                info: {
+                    title: 'HapiSimple Tasks 接口文档',
+                    version: "1.0.0",
+                    description: 'HapiSimple Tasks 接口文档',
+                    contact: {
+                        name: 'swzyt',
+                        email: 'suwei.me@qq.com'
+                    }
+                },
+            }
         }
     },
     //jwt认证配置
