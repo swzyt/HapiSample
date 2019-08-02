@@ -1,4 +1,5 @@
-const Hapi = require('hapi');
+// const Hapi = require('hapi');
+const Hapi = require('@hapi/hapi');
 const _ = require('lodash');
 const { moment, getNow, getDiff } = require("./utils/moment");
 const api_log_server = require("./libs/api_logs");
@@ -45,29 +46,25 @@ module.exports = function (settings, bootstrap) {
     //插件注册
     let pluginsArray = [
         require('hapi-auth-jwt2'),//json web token 验证插件
-        require('inert'),
-        require('vision'),
+        // require('inert'),
+        // require('vision'),
+        require('@hapi/inert'),
+        require('@hapi/vision'),
         {
-            plugin: require('hapi-swagger'),//api文档插件
+            // api文档插件
+            plugin: require('hapi-swagger'),
             options: {
-                info: settings.server.swagger.info,//引用配置文件内的swagger信息               
-                lang: "zh-cn",//中文显示
+                // 引用配置文件内的swagger信息
+                info: settings.server.swagger.info,
+                // 中文显示
+                lang: "zh-cn",
                 // 定义接口以tags属性为分类【定义分类的大标题】,给./routes路由的配置config:tags使用
                 grouping: "tags",
                 // 标签，用于对应路由config定义的tags进行归类
-                tags: [
-                    { "name": "auth", "description": "身份验证" },
-                    { "name": "storage", "description": "文件服务" },
-                    { "name": "system-app", "description": "系统-app" },
-                    { "name": "system-menu", "description": "系统-菜单" },
-                    { "name": "system-button", "description": "系统-按钮" },
-                    { "name": "system-role", "description": "系统-角色" },
-                    { "name": "system-user", "description": "系统-用户" },
-                    { "name": "system-task", "description": "系统-定时任务" },
-                ],
+                tags: settings.server.swagger.tags,
                 // basePath: '/v1/api',
-                //pathPrefixSize: 20,
-                //api文档头部输入token，以便测试
+                // pathPrefixSize: 20,
+                // api文档头部输入token，以便测试
                 securityDefinitions: {
                     jwt: {
                         type: 'apiKey',
@@ -79,9 +76,9 @@ module.exports = function (settings, bootstrap) {
                 security: [{ 'jwt': [] }],
                 auth: false,
 
-                //文档页的路径
+                // 文档页的路径
                 documentationPath: '/docs',
-                //展开接口文档，可选值 none, list或full
+                // 展开接口文档，可选值 none, list或full
                 expanded: 'none',
             }
         }

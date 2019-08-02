@@ -18,6 +18,14 @@ module.exports = {
                         email: 'suwei.me@qq.com'
                     }
                 },
+                tags: [
+                    { "name": "storage", "description": "文件服务" },
+                    { "name": "system-app", "description": "系统-app" },
+                    { "name": "system-menu", "description": "系统-菜单" },
+                    { "name": "system-button", "description": "系统-按钮" },
+                    { "name": "system-role", "description": "系统-角色" },
+                    { "name": "system-user", "description": "系统-用户" },
+                ]
             }
         },
         auth: {
@@ -33,6 +41,9 @@ module.exports = {
                         email: 'suwei.me@qq.com'
                     }
                 },
+                tags: [
+                    { "name": "auth", "description": "身份验证", externalDocs: { description: '身份验证', url: 'http://localhost:8887' } },
+                ]
             }
         },
         tasks: {
@@ -48,6 +59,9 @@ module.exports = {
                         email: 'suwei.me@qq.com'
                     }
                 },
+                tags: [
+                    { "name": "system-task", "description": "系统-定时任务" },
+                ]
             }
         }
     },
