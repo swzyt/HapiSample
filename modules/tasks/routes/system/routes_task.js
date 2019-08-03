@@ -121,5 +121,18 @@ module.exports = function (server, models) {
                 handler: models.system.task.controller.stopAll
             }
         },
+        {
+            method: 'GET',
+            path: '/system/tasks/sync_taskprocess',
+            config: {
+                auth: 'jwt',
+                tags: ['api', 'system-task'],
+                description: '同步任务进程表',
+                // validate: models.system.task.validator.syncTaskProcess.request,
+                notes: '同步任务进程表',
+                // response: models.system.task.validator.syncTaskProcess.response,
+                handler: models.system.task.controller.syncTaskProcess
+            }
+        },
     ])
 };

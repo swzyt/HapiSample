@@ -4,16 +4,17 @@ const schedule = require("node-schedule");
 const moment = require("moment");
 const restler = require("./restler");
 const Bagpipe = require('bagpipe');
+const cluster = require('cluster');
 
 /**
  * 最大进程数
  * 根据 PM2 运行本项目的进程数设置
  */
-const MaxProcessCount = 3;
+const MaxProcessCount = cluster.worker ? cluster.worker.process.env.instances : 1;
 
 module.exports = function (db) {
-    let keyPrefix = 'task-',
-        redisKey = 'local-task';
+    let keyPrefix = 'TASK-',
+        redisKey = 'LOCAL-TASK';
 
     //redis 发布/订阅 客户端
     let pub = db.cache.redis.createClient(db.cache.settings.redis.port, db.cache.settings.redis.host),
@@ -33,6 +34,8 @@ module.exports = function (db) {
             CANCELSINGLE: `${redisKey}-CancelSingle`,
             /**取消单任务最近一次运行*/
             CANCELNEXTSINGLE: `${redisKey}-CancelNextSingle`,
+            /**同步任务进程表*/
+            SYNCTASKPROCESS: `${redisKey}-SyncTaskProcess`,
         },
 
         /**任务日志描述*/
@@ -71,47 +74,6 @@ module.exports = function (db) {
                     await self.db.cache.client.rpushAsync(redisKey, ...Array.from({ length: self.getRunCount(item.process_number) }, (item, index) => { return item_str }))
                 }
             }
-
-            //redis中任务队列长度为0时，才执行初始化
-            /* if (!!!redis_list_len) {
-
-                let tasks = await self.db.SystemTask.findAll({ where: { valid: true } })
-
-                if (tasks && tasks.length > 0) {
-                    //添加到redis
-                    for (let i = 0; i < tasks.length; i++) {
-                        let item_str = JSON.stringify(tasks[i])
-
-                        await self.db.cache.client.lremAsync(redisKey, 0, item_str);
-
-                        await self.db.cache.client.lpushAsync(redisKey, item_str)
-                    }
-
-                    // setTimeout(() => { 
-
-                    // }, 1000)
-
-                    // //多进程启动会导致redis重复，此处整理重复key
-                    // redis_list_len = await self.db.cache.client.llenAsync(redisKey);
-
-                    // let redis_list = await self.db.cache.client.lrangeAsync(redisKey, 0, redis_list_len);
-                    // redis_list = [...new Set(redis_list)];
-
-                    // await self.db.cache.client.ltrimAsync(redisKey, redis_list_len, redis_list_len);
-
-                    // await self.db.cache.client.lpushAsync(redisKey, ...redis_list)
-
-                    // tasks
-                    //     .map(item => {
-                    //         let item_str = JSON.stringify(item)
-
-                    //         //初始化任务列表到redis
-                    //         self.db.cache.client.lrem(redisKey, 0, item_str, function () {
-                    //             self.db.cache.client.lpush(redisKey, item_str)
-                    //         })
-                    //     })
-                }
-            } */
         },
 
         /**清楚Redis任务列表*/
@@ -418,7 +380,7 @@ module.exports = function (db) {
          */
         saveLog: function (log_item) {
             let self = this;
-            log_item.content = log_item.content || ""
+            log_item.content = log_item.content || "";
             log_item.process_id = process.pid;
             return self.db.SystemTaskLog.build(log_item).save().then(item => {
 
@@ -426,25 +388,38 @@ module.exports = function (db) {
                     process_id: log_item.process_id, task_id: log_item.task_id
                 };
 
-                // 若当前日志为取消任务日志, 则删除任务进程记录，否则不存在时新增
+                // 若当前日志为取消任务日志, 则删除任务进程记录
                 if (log_item.content == self.TaskLogType.CANCELLOG) {
                     self.db.SystemTaskProcess.destroy({ where: options })
                 }
-                else {
-                    self.db.SystemTaskProcess.findOne({ where: options }).then(task_process => {
-                        if (!task_process) {
-                            self.db.SystemTaskProcess.build(options).save()
-                        } /* else {
-                            //若进程记录已存在，则更新其待执行任务数
-                            let task_key = self.getTaskKey(log_item.task_id);
-                            let queue_length = self.task_list[task_key] && self.task_list[task_key].queue ? self.task_list[task_key].queue.queue.length : 0;
 
-                            self.db.SystemTaskProcess.update({ queue_length: queue_length }, { where: options })
-                        } */
-                    })
-                }
                 return item;
             });
+        },
+
+        /**同步任务进程表 */
+        syncTaskProcess: function () {
+            let self = this;
+
+            Object.keys(self.task_list).map(item => {
+                //遍历当前进程运行的任务
+                let task_id = item.split(keyPrefix)[1];
+                let task_key = self.getTaskKey(task_id);
+                let queue_length = self.task_list[task_key] && self.task_list[task_key].queue ? self.task_list[task_key].queue.queue.length : 0;
+
+                let options = {
+                    process_id: process.pid,
+                    task_id: task_id
+                };
+
+                self.db.SystemTaskProcess.findOne({ where: options }).then(task_process => {
+                    if (!task_process) {
+                        self.db.SystemTaskProcess.build({ queue_length, ...options }).save()
+                    } else {
+                        self.db.SystemTaskProcess.update({ queue_length: queue_length }, { where: options })
+                    }
+                })
+            })
         },
 
         /**初始化Redis Pub/Sub*/
@@ -476,18 +451,25 @@ module.exports = function (db) {
                     case self.RedisChannelKey.CANCELNEXTSINGLE:
                         self.CancelNext(message);
                         break;
+                    //同步任务进程表
+                    case self.RedisChannelKey.SYNCTASKPROCESS:
+                        self.syncTaskProcess();
+                        break;
                 }
-
             });
 
-            //订阅-启动全部
-            sub.subscribe(self.RedisChannelKey.STARTALL);
-            //订阅-停止全部
-            sub.subscribe(self.RedisChannelKey.STOPALL);
-            //订阅-重启单任务
-            sub.subscribe(self.RedisChannelKey.RESTARTSINGLE);
-            //订阅-取消单任务
-            sub.subscribe(self.RedisChannelKey.CANCELSINGLE);
+            //遍历订阅
+            Object.keys(self.RedisChannelKey).map(item => {
+                sub.subscribe(self.RedisChannelKey[item]);
+            })
+            // //订阅-启动全部
+            // sub.subscribe(self.RedisChannelKey.STARTALL);
+            // //订阅-停止全部
+            // sub.subscribe(self.RedisChannelKey.STOPALL);
+            // //订阅-重启单任务
+            // sub.subscribe(self.RedisChannelKey.RESTARTSINGLE);
+            // //订阅-取消单任务
+            // sub.subscribe(self.RedisChannelKey.CANCELSINGLE);
         },
         /**
          * 发布Redis消息
@@ -519,6 +501,10 @@ module.exports = function (db) {
                 //取消单任务最近一次运行
                 case self.RedisChannelKey.CANCELNEXTSINGLE:
                     pub.publish(self.RedisChannelKey.CANCELNEXTSINGLE, data);
+                    break;
+                //同步任务进程表
+                case self.RedisChannelKey.SYNCTASKPROCESS:
+                    pub.publish(self.RedisChannelKey.SYNCTASKPROCESS, data);
                     break;
             }
         }

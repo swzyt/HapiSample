@@ -136,4 +136,14 @@ Service.prototype.stopAll = function () {
     return null;
 };
 
+Service.prototype.syncTaskProcess = function () {
+
+    var self = this;
+
+    self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.SYNCTASKPROCESS);
+
+    return null;
+};
+
+
 module.exports = Service;

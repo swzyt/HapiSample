@@ -113,4 +113,8 @@ Controller.prototype.stopAll = function (request, h) {
     return this.service.stopAll();
 };
 
+Controller.prototype.syncTaskProcess = function (request, h) {
+    return this.service.syncTaskProcess();
+};
+
 module.exports = Controller;
