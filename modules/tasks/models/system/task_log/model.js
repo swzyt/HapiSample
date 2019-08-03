@@ -27,6 +27,11 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       comment: "日志内容"
     },
+    process_id: {
+      type: DataTypes.INTEGER(11),
+      allowNull: false,
+      comment: "任务运行进程id"
+    }
   }, {
       tableName: 'system_task_logs',
       timestamps: true,//自动添加时间戳createAt，updateAt

@@ -18,6 +18,7 @@ var RequestModel = {
     end_time: Joi.date().allow(['', null]).description('结束时间'),
     cron: Joi.string().max(100).allow(['', null]).description('执行计划'),
     description: Joi.string().allow(['', null]).description('描述'),
+    process_id: Joi.number().allow(null).description('进程id'),
 };
 
 var ResponseModel = {
@@ -34,6 +35,7 @@ var ResponseModel = {
     end_time: Joi.date().allow(['', null]).description('结束时间'),
     cron: Joi.string().max(100).allow(['', null]).description('执行计划'),
     description: Joi.string().allow(['', null]).description('描述'),
+    process_id: Joi.number().allow(null).description('进程id'),
 
     logs: Joi.array().allow(['', null]).description('任务日志'),
 

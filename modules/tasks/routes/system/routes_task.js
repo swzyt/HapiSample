@@ -69,5 +69,31 @@ module.exports = function (server, models) {
                 handler: models.system.task.controller.delete
             }
         },
+        {
+            method: 'GET',
+            path: '/system/tasks/startall',
+            config: {
+                auth: 'jwt',
+                tags: ['api', 'system-task'],
+                description: '手动启动全部任务',
+                // validate: models.system.task.validator.startAll.request,
+                notes: '手动启动全部任务',
+                // response: models.system.task.validator.startAll.response,
+                handler: models.system.task.controller.startAll
+            }
+        },
+        {
+            method: 'GET',
+            path: '/system/tasks/stopall',
+            config: {
+                auth: 'jwt',
+                tags: ['api', 'system-task'],
+                description: '手动停止全部任务',
+                // validate: models.system.task.validator.stopAll.request,
+                notes: '手动停止全部任务',
+                // response: models.system.task.validator.stopAll.response,
+                handler: models.system.task.controller.stopAll
+            }
+        },
     ])
 };

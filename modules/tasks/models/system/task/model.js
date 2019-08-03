@@ -63,6 +63,11 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: true,
       comment: "任务描述"
     },
+    process_id: {
+      type: DataTypes.INTEGER(11),
+      allowNull: true,
+      comment: "任务运行进程id"
+    }
   }, {
       tableName: 'system_tasks',
       timestamps: true,//自动添加时间戳createAt，updateAt

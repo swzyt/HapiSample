@@ -70,7 +70,7 @@ module.exports = {
         //加密密钥
         "secret": "1234567890",
         //过期时间
-        "expire_times": 1800
+        "expire_times": 7200
     },
     //mysql数据库配置
     "mysql": {

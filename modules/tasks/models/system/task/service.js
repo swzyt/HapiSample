@@ -3,7 +3,7 @@ var moment = require("moment");
 var Boom = require('boom');
 var Service = function (db) {
     this.db = db;
-    this.attributes = ['task_id', 'name', 'type', 'method', 'path', 'parallel_number', 'valid', 'status', 'start_time', 'end_time', 'cron', 'description', 'created_at', 'updated_at'];
+    this.attributes = ['task_id', 'name', 'type', 'method', 'path', 'parallel_number', 'valid', 'status', 'start_time', 'end_time', 'cron', 'description', 'process_id', 'created_at', 'updated_at'];
 
     this.include = [{
         //任务日志
@@ -18,20 +18,23 @@ var Service = function (db) {
 
 //普通列表
 Service.prototype.list = function (where, page_size, page_number, orderArr) {
+    let self = this;
 
     var options = {
         distinct: true,
-        attributes: this.attributes,
-        include: this.include,
+        attributes: self.attributes,
+        include: self.include,
         where: where,
         order: orderArr
     };
+
     //如果分页参数中有一个等于0, 则获取全部数据
     if (page_size > 0 && page_number > 0) {
         options.limit = page_size;
         options.offset = page_size * (page_number - 1);
     }
-    return this.db.SystemTask.findAndCountAll(options)
+
+    return self.db.SystemTask.findAndCountAll(options)
 };
 //获取单项
 Service.prototype.get = function (where) {
@@ -47,7 +50,7 @@ Service.prototype.get = function (where) {
 //创建
 Service.prototype.create = function (data) {
 
-    var self = this;
+    let self = this;
 
     return self.db.SystemTask.build(data).save().then(item => {
 
@@ -65,7 +68,7 @@ Service.prototype.delete = function (where) {
         if (item) {
 
             //取消并删除
-            self.TaskMgr.Cancel(item.task_id)
+            self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.CANCELSINGLE, item.task_id);
 
             return item.destroy();
         }
@@ -80,13 +83,35 @@ Service.prototype.update = function (where, data) {
 
     return self.db.SystemTask.update(data, { where: where }).then(result => {
 
-        //重启任务
         self.get(where).then(item => {
-            self.TaskMgr.ReStart(item)
+            // 若任务已关闭，则将进程id置空
+            if (item.valid) {
+                self.db.SystemTask.update({ process_id: null }, { where: where })
+            }
+            // 重启任务
+            self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.RESTARTSINGLE, item.toJSON());
         })
 
         return result;
     })
+};
+
+Service.prototype.startAll = function () {
+
+    var self = this;
+
+    self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.STARTALL);
+
+    return null;
+};
+
+Service.prototype.stopAll = function () {
+
+    var self = this;
+
+    self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.STOPALL);
+
+    return null;
 };
 
 module.exports = Service;

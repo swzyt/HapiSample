@@ -98,4 +98,12 @@ Controller.prototype.update = function (request, h) {
     })
 };
 
+Controller.prototype.startAll = function (request, h) {
+    return this.service.startAll();
+};
+
+Controller.prototype.stopAll = function (request, h) {
+    return this.service.stopAll();
+};
+
 module.exports = Controller;

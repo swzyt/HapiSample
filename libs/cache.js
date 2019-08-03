@@ -16,5 +16,6 @@ client.on("error", function (err) {
 
 module.exports = {
     client: client,
-    redis: redis
+    redis: redis,
+    settings
 }
