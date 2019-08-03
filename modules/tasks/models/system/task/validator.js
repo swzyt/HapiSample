@@ -11,6 +11,7 @@ var RequestModel = {
     type: Joi.string().max(100).allow(['', null]).description('任务类型'),
     method: Joi.string().max(100).allow(['', null]).description('远程任务调用。get/post/delete/put'),
     path: Joi.string().max(1000).allow(['', null]).description('地址'),
+    process_number: Joi.number().allow(null).description('进程数'),
     parallel_number: Joi.number().allow(null).description('并行数'),
     valid: Joi.boolean().allow(['', null]).description('是否有效'),
     status: Joi.string().max(100).allow(['', null]).description('状态 执行中/暂停/'),
@@ -18,7 +19,6 @@ var RequestModel = {
     end_time: Joi.date().allow(['', null]).description('结束时间'),
     cron: Joi.string().max(100).allow(['', null]).description('执行计划'),
     description: Joi.string().allow(['', null]).description('描述'),
-    process_id: Joi.number().allow(null).description('进程id'),
 };
 
 var ResponseModel = {
@@ -28,6 +28,7 @@ var ResponseModel = {
     type: Joi.string().max(100).allow(['', null]).description('任务类型'),
     method: Joi.string().max(100).allow(['', null]).description('远程任务调用。get/post/delete/put'),
     path: Joi.string().max(1000).allow(['', null]).description('地址'),
+    process_number: Joi.number().allow(null).description('进程数'),
     parallel_number: Joi.number().allow(null).description('并行数'),
     valid: Joi.boolean().allow(['', null]).description('是否有效'),
     status: Joi.string().max(100).allow(['', null]).description('状态 执行中/暂停/'),
@@ -35,9 +36,9 @@ var ResponseModel = {
     end_time: Joi.date().allow(['', null]).description('结束时间'),
     cron: Joi.string().max(100).allow(['', null]).description('执行计划'),
     description: Joi.string().allow(['', null]).description('描述'),
-    process_id: Joi.number().allow(null).description('进程id'),
 
     logs: Joi.array().allow(['', null]).description('任务日志'),
+    processs: Joi.array().allow(['', null]).description('任务进程'),
 
     created_at: Joi.date().description('创建时间'),
     updated_at: Joi.date().description('更新时间')

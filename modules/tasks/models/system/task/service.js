@@ -3,12 +3,17 @@ var moment = require("moment");
 var Boom = require('boom');
 var Service = function (db) {
     this.db = db;
-    this.attributes = ['task_id', 'name', 'type', 'method', 'path', 'parallel_number', 'valid', 'status', 'start_time', 'end_time', 'cron', 'description', 'process_id', 'created_at', 'updated_at'];
+    this.attributes = ['task_id', 'name', 'type', 'method', 'path', 'process_number', 'parallel_number', 'valid', 'status', 'start_time', 'end_time', 'cron', 'description', 'created_at', 'updated_at'];
 
     this.include = [{
         //任务日志
         model: this.db.SystemTaskLog,
         as: "logs",
+        required: false
+    }, {
+        //任务进程
+        model: this.db.SystemTaskProcess,
+        as: "processs",
         required: false
     }]
 
@@ -55,7 +60,8 @@ Service.prototype.create = function (data) {
     return self.db.SystemTask.build(data).save().then(item => {
 
         //初始化任务
-        self.TaskMgr.Run(item)
+        // self.TaskMgr.Run(item)
+        self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.RESTARTSINGLE, item.toJSON());
 
         return item
     })
@@ -67,7 +73,7 @@ Service.prototype.delete = function (where) {
     return self.db.SystemTask.findOne({ where: where }).then(function (item) {
         if (item) {
 
-            //取消并删除
+            // 取消并删除
             self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.CANCELSINGLE, item.task_id);
 
             return item.destroy();
@@ -84,10 +90,6 @@ Service.prototype.update = function (where, data) {
     return self.db.SystemTask.update(data, { where: where }).then(result => {
 
         self.get(where).then(item => {
-            // 若任务已关闭，则将进程id置空
-            if (item.valid) {
-                self.db.SystemTask.update({ process_id: null }, { where: where })
-            }
             // 重启任务
             self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.RESTARTSINGLE, item.toJSON());
         })
@@ -96,11 +98,31 @@ Service.prototype.update = function (where, data) {
     })
 };
 
+Service.prototype.initRedis = function () {
+
+    var self = this;
+
+    self.TaskMgr.initRedis();
+
+    return null;
+};
+
+Service.prototype.clearRedis = function () {
+
+    var self = this;
+
+    self.TaskMgr.clearRedis();
+
+    return null;
+};
+
 Service.prototype.startAll = function () {
 
     var self = this;
 
-    self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.STARTALL);
+    self.TaskMgr.initRedis().then(() => {
+        self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.STARTALL);
+    })
 
     return null;
 };

@@ -71,6 +71,32 @@ module.exports = function (server, models) {
         },
         {
             method: 'GET',
+            path: '/system/tasks/initredis',
+            config: {
+                auth: 'jwt',
+                tags: ['api', 'system-task'],
+                description: '初始化redis任务队列',
+                // validate: models.system.task.validator.initRedis.request,
+                notes: '初始化redis任务队列',
+                // response: models.system.task.validator.initRedis.response,
+                handler: models.system.task.controller.initRedis
+            }
+        },
+        {
+            method: 'GET',
+            path: '/system/tasks/clearredis',
+            config: {
+                auth: 'jwt',
+                tags: ['api', 'system-task'],
+                description: '清除redis任务队列',
+                // validate: models.system.task.validator.clearRedis.request,
+                notes: '清除redis任务队列',
+                // response: models.system.task.validator.clearRedis.response,
+                handler: models.system.task.controller.clearRedis
+            }
+        },
+        {
+            method: 'GET',
             path: '/system/tasks/startall',
             config: {
                 auth: 'jwt',

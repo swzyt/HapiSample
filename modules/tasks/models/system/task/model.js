@@ -27,11 +27,17 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       comment: "地址"
     },
+    process_number: {
+      type: DataTypes.INTEGER(11),
+      allowNull: false,
+      defaultValue: 1,
+      comment: "任务进程数"
+    },
     parallel_number: {
       type: DataTypes.INTEGER(11),
-      allowNull: true,
+      allowNull: false,
       defaultValue: 1,
-      comment: "并行数"
+      comment: "任务并行数"
     },
     valid: {
       type: DataTypes.BOOLEAN(),
@@ -63,11 +69,6 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: true,
       comment: "任务描述"
     },
-    process_id: {
-      type: DataTypes.INTEGER(11),
-      allowNull: true,
-      comment: "任务运行进程id"
-    }
   }, {
       tableName: 'system_tasks',
       timestamps: true,//自动添加时间戳createAt，updateAt
@@ -76,6 +77,10 @@ module.exports = function (sequelize, DataTypes) {
         associate: function (models) {
           SystemTask.hasMany(models.SystemTaskLog, {
             as: "logs",
+            foreignKey: 'task_id'
+          });
+          SystemTask.hasMany(models.SystemTaskProcess, {
+            as: "processs",
             foreignKey: 'task_id'
           });
         }
