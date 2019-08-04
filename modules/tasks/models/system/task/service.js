@@ -3,7 +3,7 @@ var moment = require("moment");
 var Boom = require('boom');
 var Service = function (db) {
     this.db = db;
-    this.attributes = ['task_id', 'name', 'type', 'method', 'path', 'process_number', 'parallel_number', 'valid', 'status', 'start_time', 'end_time', 'cron', 'description', 'created_at', 'updated_at'];
+    this.attributes = ['task_id', 'name', 'type', 'method', 'path', 'params', 'process_number', 'parallel_number', 'run_limit', 'valid', 'status', 'start_time', 'end_time', 'cron', 'description', 'created_at', 'updated_at'];
 
     this.include = [{
         //任务日志

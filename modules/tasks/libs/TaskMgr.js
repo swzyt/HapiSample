@@ -19,6 +19,9 @@ const TaskKeyPrefix = 'TASK-';
 /**Redis KEY 前缀 */
 const RedisKeyPrefix = 'LOCAL-TASK';
 
+/**Redis Run Limit KEY 前缀 */
+const RedisRunLimitKeyPrefix = 'REDISTASK-Run-Limit';
+
 module.exports = function (db) {
 
     //redis 发布/订阅 客户端
@@ -69,7 +72,8 @@ module.exports = function (db) {
             //清除队列
             await self.clearRedis();
 
-            await self.db.SystemTask.bulkCreate(initTask);
+            // 初始化任务记录
+            // await self.db.SystemTask.bulkCreate(initTask);
 
             //写入新记录
             let tasks = await self.db.SystemTask.findAll({ where: { valid: true, status: 'running' } })
@@ -90,23 +94,34 @@ module.exports = function (db) {
             // 支持任务多进程运行
             // 追加到队列尾部
             await self.db.cache.client.rpushAsync(`${RedisKeyPrefix}:${item.task_id}`, ...Array.from({ length: self.getRunCount(item.process_number) }, (item, index) => { return item_str }));
+
+            //设置任务可运行次数
+            let redis_run_limit_key = `${RedisRunLimitKeyPrefix}:${item.task_id}`;
+            await self.db.cache.client.rpushAsync(redis_run_limit_key, ...Array.from({ length: item.run_limit }, (item, index) => { return redis_run_limit_key }));
         },
 
         /**清除Redis任务列表*/
         async clearRedis() {
             let self = this;
 
+            //清除任务列表
             let keys = await self.db.cache.client.keysAsync(`${RedisKeyPrefix}*`);
-
             if (keys && keys.length > 0) {
                 for (let i = 0; i < keys.length; i++) {
-                    let key = keys[i];
-
-                    //先获取redis中任务队列数量
-                    let redis_list_len = await self.db.cache.client.llenAsync(key);
-
+                    //先获取redis队列数量
+                    let redis_list_len = await self.db.cache.client.llenAsync(keys[i]);
                     //清除队列
-                    await self.db.cache.client.ltrimAsync(key, redis_list_len, redis_list_len);
+                    await self.db.cache.client.ltrimAsync(keys[i], redis_list_len, redis_list_len);
+                }
+            }
+            //清除任务运行次数限制列表
+            keys = await self.db.cache.client.keysAsync(`${RedisRunLimitKeyPrefix}*`);
+            if (keys && keys.length > 0) {
+                for (let i = 0; i < keys.length; i++) {
+                    //先获取redis队列数量
+                    let redis_list_len = await self.db.cache.client.llenAsync(keys[i]);
+                    //清除队列
+                    await self.db.cache.client.ltrimAsync(keys[i], redis_list_len, redis_list_len);
                 }
             }
         },
@@ -245,41 +260,53 @@ module.exports = function (db) {
                     let job = schedule.scheduleJob(task_key, job_rule, async function () {
 
                         const t = async function () {
-                            //运行日志
-                            let task_log = self.getLogItem(item.task_id, job);
-
-                            try {
-                                // let fun = require("D:/WorkSpace/Framework/HapiSimple/tasks/index.js")
-                                //本地任务
-                                if (item.type == "local") {
-                                    let fun = require(item.path);
-                                    task_log.content = JSON.stringify(await fun());
-                                }
-                                //远程任务
-                                else if (item.type == "remote") {
-                                    task_log.content = await restler[item.method](item.path)
-                                }
+                            //判断任务执行次数，若超过限制，则取消任务，为0则不限制
+                            let redis_run_limit_key = `${RedisRunLimitKeyPrefix}:${item.task_id}`;
+                            let run_limit_result = await self.db.cache.client.lpopAsync(redis_run_limit_key);
+                            if (item.run_limit > 0 && !run_limit_result) {
+                                //发布取消消息
+                                self.pubRedisChannel(self.RedisChannelKey.CANCELSINGLE, item.task_id);
                             }
-                            catch (err) {
-                                //异常日志
-                                task_log.content = JSON.stringify({
-                                    code: err.code,
-                                    message: err.message,
-                                    stack: err.stack
-                                })
+                            else {
+                                //运行日志
+                                let task_log = self.getLogItem(item.task_id, job);
+
+                                try {
+                                    // let fun = require("D:/WorkSpace/Framework/HapiSimple/tasks/index.js")
+                                    //本地任务
+                                    if (item.type == "local") {
+                                        let fun = require(item.path);
+                                        task_log.content = JSON.stringify(await fun());
+                                    }
+                                    //远程任务
+                                    else if (item.type == "remote") {
+                                        task_log.content = await restler[item.method](item.path, JSON.parse(item.params));
+                                    }
+                                }
+                                catch (err) {
+                                    //异常日志
+                                    task_log.content = JSON.stringify({
+                                        code: err.code,
+                                        message: err.message,
+                                        stack: err.stack
+                                    })
+                                }
+
+                                task_log.content = run_limit_result || "无redis结果";
+
+                                task_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
+
+                                await self.saveLog(task_log)
+
+                                //本次任务执行完毕，执行下一次计划
+                                self.task_list[task_key] && self.task_list[task_key].queue && self.task_list[task_key].queue._next();
                             }
-
-                            task_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
-
-                            await self.saveLog(task_log)
-
-                            //本次任务执行完毕，执行下一次计划
-                            self.task_list[task_key] && self.task_list[task_key].queue && self.task_list[task_key].queue._next();
 
                         }
 
                         //推入任务待执行队列，控制并行数
                         self.task_list[task_key] && self.task_list[task_key].queue && self.task_list[task_key].queue.push(t)
+
                     });
 
                     //初始化当前任务执行队列，可控制并行数
@@ -556,6 +583,20 @@ module.exports = function (db) {
 
 
 var initTask = [{
+    "name": "定时更新任务进程",
+    "type": "remote",
+    "method": 'get',
+    "path": "http://localhost:8889/system/tasks/sync_taskprocess",
+    "params": "{\"headers\":{\"Authorization\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHAiOnsiYXBwX2lkIjoiMSIsIm5hbWUiOiIyIiwiZGVzY3JpcHRpb24iOiIzIiwidmFsaWQiOnRydWV9LCJ1c2VyIjp7InVzZXJfaWQiOiIxIiwiYWNjb3VudCI6IjIiLCJuYW1lIjoiMyIsImVtYWlsIjoiMTIzQHFxLmNvbSIsImRlc2NyaXB0aW9uIjoid2Vxd2Vxd2Vxd2UiLCJ2YWxpZCI6dHJ1ZSwicm9sZXMiOltdfSwiZXhwaXJlc0F0IjoxNTY0OTA0MjQ2NTM5LCJpYXQiOjE1NjQ4OTcwNDZ9.gmPzdA_dubKzubiTNcwrny89h5mFczY1sBRhQ8-ef9s\"}}",
+    "process_number": 1,
+    "parallel_number": 1,
+    "valid": true,
+    "status": "running",
+    "start_time": "2019-07-31T00:00:00.000Z",
+    "end_time": "2019-08-31T15:59:59.000Z",
+    "cron": "*/5 * * * * ?",
+    "description": "定时更新任务进程"
+}, {
     "task_id": "1",
     "name": "任务1",
     "type": "local",

@@ -15,7 +15,7 @@ module.exports = function (sequelize, DataTypes) {
     type: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      comment: "任务类型。local(本地)/remote(远程)"
+      comment: "任务类型。local(本地)/remote(远程)/process(进程任务)"
     },
     method: {
       type: DataTypes.STRING(100),
@@ -27,6 +27,11 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       comment: "地址"
     },
+    params: {
+      type: DataTypes.STRING(1000),
+      allowNull: true,
+      comment: "运行参数"
+    },
     process_number: {
       type: DataTypes.INTEGER(11),
       allowNull: false,
@@ -37,7 +42,13 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.INTEGER(11),
       allowNull: false,
       defaultValue: 1,
-      comment: "任务并行数"
+      comment: "单进程内任务并行数"
+    },
+    run_limit: {
+      type: DataTypes.INTEGER(11),
+      allowNull: false,
+      defaultValue: 1,
+      comment: "所有进程内总运行次数限定值"
     },
     valid: {
       type: DataTypes.BOOLEAN(),

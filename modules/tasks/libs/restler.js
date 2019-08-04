@@ -1,13 +1,22 @@
 const restler = require('restler');
+const _ = require('lodash');
 
-var options = {
+var defaultOptions = {
     headers: {
         "content-type": "application/json"
     }
 }
+const mergeParams = (params) => {
+    return _.merge(defaultOptions, params, function (dest, src) {
+        if (_.isArray(dest) && _.isArray(src)) {
+            return dest.concat(src);
+        }
+    });
+}
 
+const get = (url, params) => {
+    let options = mergeParams(params);
 
-const get = (url) => {
     return new Promise((resolve, reject) => {
         restler.get(url, options)
             .on("success", function (result) {
@@ -29,7 +38,9 @@ const get = (url) => {
             })
     })
 }
-const post = (url) => {
+const post = (url, params) => {
+    let options = mergeParams(params);
+
     return new Promise((resolve, reject) => {
         restler.post(url, options)
             .on("success", function (result) {
