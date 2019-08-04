@@ -64,7 +64,7 @@ Service.prototype.create = function (data) {
         // 启动任务
         self.TaskMgr.startFromRedis();
 
-        return item
+        return item;
     })
 };
 //删除单个
@@ -106,45 +106,38 @@ Service.prototype.initRedis = function () {
 
     var self = this;
 
-    self.TaskMgr.initRedis();
-
-    return null;
+    return self.TaskMgr.initRedis();
 };
 
 Service.prototype.clearRedis = function () {
 
     var self = this;
 
-    self.TaskMgr.clearRedis();
-
-    return null;
+    return self.TaskMgr.clearRedis();
 };
 
 Service.prototype.startFromRedis = function () {
 
     var self = this;
 
-    self.TaskMgr.startFromRedis();
-
-    return null;
+    return self.TaskMgr.startFromRedis();;
 };
 
 Service.prototype.stopAll = function () {
 
     var self = this;
 
-    self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.STOPALL);
-
-    return null;
+    return self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.STOPALL);
 };
 
 Service.prototype.syncTaskProcess = function () {
 
     var self = this;
 
-    self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.SYNCTASKPROCESS);
-
-    return null;
+    //删除所有进程记录
+    return self.db.SystemTaskProcess.destroy({ where: { process_id: { $gt: 0 } } }).then(() => {
+        return self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.SYNCTASKPROCESS);
+    })
 };
 
 

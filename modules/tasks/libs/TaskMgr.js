@@ -448,15 +448,6 @@ module.exports = function (db) {
         syncTaskProcess: async function () {
             let self = this;
 
-            const Op = self.db.Sequelize.Op;
-
-            //删除所有进程记录
-            await self.db.SystemTaskProcess.destroy({
-                where: {
-                    process_id: { [Op.gt]: 0 }
-                }
-            })
-
             Object.keys(self.task_list).map(item => {
                 //遍历当前进程运行的任务
                 let task_id = item.split(TaskKeyPrefix)[1];
@@ -561,7 +552,7 @@ module.exports = function (db) {
          * @param {*} channel 
          * @param {*} data
          */
-        pubRedisChannel: function (channel, data) {
+        pubRedisChannel: async function (channel, data) {
             data = data || channel;
 
             if (!_.isString(data) && _.isObject(data))
@@ -570,7 +561,7 @@ module.exports = function (db) {
             console.log("发布频道消息" + channel + ": " + data);
 
             //发送
-            pub.publish(channel, data);
+            return await pub.publishAsync(channel, data);
         }
     }
 
@@ -582,11 +573,10 @@ module.exports = function (db) {
     return TaskMgr;
 }
 
-
 var initTask = [{
     "name": "定时更新任务进程",
     "type": "remote",
-    "method": 'get',
+    "method": "get",
     "path": "http://localhost:8889/system/tasks/sync_taskprocess",
     "params": "{\"headers\":{\"Authorization\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHAiOnsiYXBwX2lkIjoiMSIsIm5hbWUiOiIyIiwiZGVzY3JpcHRpb24iOiIzIiwidmFsaWQiOnRydWV9LCJ1c2VyIjp7InVzZXJfaWQiOiIxIiwiYWNjb3VudCI6IjIiLCJuYW1lIjoiMyIsImVtYWlsIjoiMTIzQHFxLmNvbSIsImRlc2NyaXB0aW9uIjoid2Vxd2Vxd2Vxd2UiLCJ2YWxpZCI6dHJ1ZSwicm9sZXMiOltdfSwiZXhwaXJlc0F0IjoxNTY0OTA0MjQ2NTM5LCJpYXQiOjE1NjQ4OTcwNDZ9.gmPzdA_dubKzubiTNcwrny89h5mFczY1sBRhQ8-ef9s\"}}",
     "process_number": 1,

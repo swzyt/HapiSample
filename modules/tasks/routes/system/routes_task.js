@@ -101,9 +101,9 @@ module.exports = function (server, models) {
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
-                description: '从Redis开始任务',
+                description: '从Redis启动全部有效任务',
                 // validate: models.system.task.validator.startFromRedis.request,
-                notes: '从Redis开始任务',
+                notes: '从Redis启动全部有效任务',
                 // response: models.system.task.validator.startFromRedis.response,
                 handler: models.system.task.controller.startFromRedis
             }

@@ -99,23 +99,48 @@ Controller.prototype.update = function (request, h) {
 };
 
 Controller.prototype.initRedis = function (request, h) {
-    return this.service.initRedis();
+    return this.service.initRedis().then(function (result) {
+        return h.success(result);
+
+    }).catch(function (err) {
+        return h.error(Boom.badRequest(err.message, err));
+    })
 };
 
 Controller.prototype.clearRedis = function (request, h) {
-    return this.service.clearRedis();
+    return this.service.clearRedis().then(function (result) {
+        return h.success(result);
+
+    }).catch(function (err) {
+        return h.error(Boom.badRequest(err.message, err));
+    })
 };
 
 Controller.prototype.startFromRedis = function (request, h) {
-    return this.service.startFromRedis();
+    return this.service.startFromRedis().then(function (result) {
+        return h.success(result);
+
+    }).catch(function (err) {
+        return h.error(Boom.badRequest(err.message, err));
+    })
 };
 
 Controller.prototype.stopAll = function (request, h) {
-    return this.service.stopAll();
+    return this.service.stopAll().then(function (result) {
+        return h.success(result);
+
+    }).catch(function (err) {
+        return h.error(Boom.badRequest(err.message, err));
+    })
 };
 
 Controller.prototype.syncTaskProcess = function (request, h) {
-    return this.service.syncTaskProcess();
+    return this.service.syncTaskProcess().then(function (result) {
+        return h.success(result);
+
+    }).catch(function (err) {
+        return h.error(Boom.badRequest(err.message, err));
+    })
 };
 
 module.exports = Controller;
