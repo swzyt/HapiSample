@@ -101,12 +101,13 @@ Controller.prototype.update = function (request, h) {
 Controller.prototype.initRedis = function (request, h) {
     return this.service.initRedis();
 };
+
 Controller.prototype.clearRedis = function (request, h) {
     return this.service.clearRedis();
 };
 
-Controller.prototype.startAll = function (request, h) {
-    return this.service.startAll();
+Controller.prototype.startFromRedis = function (request, h) {
+    return this.service.startFromRedis();
 };
 
 Controller.prototype.stopAll = function (request, h) {

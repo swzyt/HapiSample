@@ -1,6 +1,7 @@
 'use strict'
 
 const schedule = require("node-schedule");
+const _ = require('lodash');
 const moment = require("moment");
 const restler = require("./restler");
 const Bagpipe = require('bagpipe');
@@ -12,9 +13,13 @@ const cluster = require('cluster');
  */
 const MaxProcessCount = cluster.worker ? cluster.worker.process.env.instances : 1;
 
+/**本地任务 KEY 前缀 */
+const TaskKeyPrefix = 'TASK-';
+
+/**Redis KEY 前缀 */
+const RedisKeyPrefix = 'LOCAL-TASK';
+
 module.exports = function (db) {
-    let keyPrefix = 'TASK-',
-        redisKey = 'LOCAL-TASK';
 
     //redis 发布/订阅 客户端
     let pub = db.cache.redis.createClient(db.cache.settings.redis.port, db.cache.settings.redis.host),
@@ -22,20 +27,23 @@ module.exports = function (db) {
 
     var TaskMgr = {
 
-        /**Redis 订阅 KEY*/
+        /**Redis 普通订阅 KEY*/
         RedisChannelKey: {
-            /**启动全部*/
-            STARTALL: `${redisKey}-StartAll`,
             /**停止全部*/
-            STOPALL: `${redisKey}-StopAll`,
+            STOPALL: `${RedisKeyPrefix}-StopAll`,
             /**重启单任务*/
-            RESTARTSINGLE: `${redisKey}-ReStartSingle`,
+            RESTARTSINGLE: `${RedisKeyPrefix}-ReStartSingle`,
             /**取消单任务*/
-            CANCELSINGLE: `${redisKey}-CancelSingle`,
+            CANCELSINGLE: `${RedisKeyPrefix}-CancelSingle`,
             /**取消单任务最近一次运行*/
-            CANCELNEXTSINGLE: `${redisKey}-CancelNextSingle`,
+            CANCELNEXTSINGLE: `${RedisKeyPrefix}-CancelNextSingle`,
             /**同步任务进程表*/
-            SYNCTASKPROCESS: `${redisKey}-SyncTaskProcess`,
+            SYNCTASKPROCESS: `${RedisKeyPrefix}-SyncTaskProcess`,
+        },
+        /**Redis 模式订阅 KEY*/
+        RedisPatternChannelKey: {
+            /**订阅任务ID，模式匹配 */
+            PatternTaskChannelID: `${RedisKeyPrefix}-TaskChannelID-`
         },
 
         /**任务日志描述*/
@@ -61,30 +69,66 @@ module.exports = function (db) {
             //清除队列
             await self.clearRedis();
 
+            await self.db.SystemTask.bulkCreate(initTask);
+
             //写入新记录
             let tasks = await self.db.SystemTask.findAll({ where: { valid: true, status: 'running' } })
             if (tasks && tasks.length > 0) {
                 //添加到redis
                 for (let i = 0; i < tasks.length; i++) {
-                    let item = tasks[i],
-                        item_str = JSON.stringify(tasks[i]);
-
-                    // 支持任务多进程运行
-                    // 追加到队列尾部
-                    await self.db.cache.client.rpushAsync(redisKey, ...Array.from({ length: self.getRunCount(item.process_number) }, (item, index) => { return item_str }))
+                    await self.pushToRedis(tasks[i])
                 }
             }
         },
 
-        /**清楚Redis任务列表*/
+        /**push至Redis */
+        async pushToRedis(item) {
+            let self = this;
+
+            let item_str = JSON.stringify(item);
+
+            // 支持任务多进程运行
+            // 追加到队列尾部
+            await self.db.cache.client.rpushAsync(`${RedisKeyPrefix}:${item.task_id}`, ...Array.from({ length: self.getRunCount(item.process_number) }, (item, index) => { return item_str }));
+        },
+
+        /**清除Redis任务列表*/
         async clearRedis() {
             let self = this;
 
-            //先获取redis中任务队列数量
-            let redis_list_len = await self.db.cache.client.llenAsync(redisKey);
+            let keys = await self.db.cache.client.keysAsync(`${RedisKeyPrefix}*`);
 
-            //清除队列
-            await self.db.cache.client.ltrimAsync(redisKey, redis_list_len, redis_list_len);
+            if (keys && keys.length > 0) {
+                for (let i = 0; i < keys.length; i++) {
+                    let key = keys[i];
+
+                    //先获取redis中任务队列数量
+                    let redis_list_len = await self.db.cache.client.llenAsync(key);
+
+                    //清除队列
+                    await self.db.cache.client.ltrimAsync(key, redis_list_len, redis_list_len);
+                }
+            }
+        },
+
+        /**从Redis开始任务*/
+        async startFromRedis() {
+            let self = this;
+
+            await self.initRedis();
+
+            let keys = await self.db.cache.client.keysAsync(`${RedisKeyPrefix}*`);
+
+            if (keys && keys.length > 0) {
+                for (let i = 0; i < keys.length; i++) {
+                    let key = keys[i];
+
+                    let channel = `${self.RedisPatternChannelKey.PatternTaskChannelID}${key.split(':')[1]}`;
+
+                    //通知各进程运行任务
+                    self.pubRedisChannel(channel, key);
+                }
+            }
         },
 
         /**获取任务运行最大进程数 */
@@ -98,7 +142,7 @@ module.exports = function (db) {
          * @param {*} task_id 
          */
         getTaskKey(task_id) {
-            return `${keyPrefix}${task_id}`;
+            return `${TaskKeyPrefix}${task_id}`;
         },
 
         /**
@@ -119,7 +163,7 @@ module.exports = function (db) {
          * 检测任务有效性
          * @param {*} item 
          */
-        checkTaskItem(item) {
+        checkTaskItemValid(item) {
             let result = item &&
                 item.valid &&
                 item.status == "running" &&
@@ -134,33 +178,20 @@ module.exports = function (db) {
             return result;
         },
 
-        /**启动全部*/
-        startAll: async function () {
+        /**启动任务*/
+        Start: async function (channel) {
             let self = this;
 
             //从redis 队列头部取出待执行的任务
-            let redisItem = await self.db.cache.client.lpopAsync(redisKey);
+            let redisItem = await self.db.cache.client.lpopAsync(channel);
 
             if (redisItem) {
                 let item = JSON.parse(redisItem)
 
-                //任务已在当前进程运行，则再添加redis供其他进程运行
-                if (self.checkTaskList(item.task_id)) {
-                    //追加到队列尾部
-                    await self.db.cache.client.rpushAsync(redisKey, redisItem)
-
-                    //再次发布redis消息，使其他进程可再次获取此任务
-                    // self.pubRedisChannel(self.RedisChannelKey.STARTALL)
-                }
-                //任务配置有效，则运行
-                else if (self.checkTaskItem(item)) {
+                //任务未在当前进程运行，且任务配置有效，则运行
+                if (!self.checkTaskList(item.task_id) && self.checkTaskItemValid(item)) {
                     await self.Run(item)
                 }
-
-                //遍历操作有一定几率出现死循环，原因是，某项任务一直被单一进程反复获取，但此任务又在此进程中运行
-                //为了尽量避免此情况，于是重新发布redis消息，使其他进程可再次获取此任务
-                //遍历下一项任务
-                self.startAll();
             }
         },
 
@@ -173,7 +204,7 @@ module.exports = function (db) {
 
             Object.keys(self.task_list).map(item => {
                 //遍历当前进程运行的任务，并全部取消
-                let task_id = item.split(keyPrefix)[1];
+                let task_id = item.split(TaskKeyPrefix)[1];
                 self.Cancel(task_id);
             })
 
@@ -196,7 +227,7 @@ module.exports = function (db) {
                 }
 
                 //检测任务有效性
-                if (!self.checkTaskItem(item)) {
+                if (!self.checkTaskItemValid(item)) {
                     return null;
                 }
 
@@ -382,59 +413,58 @@ module.exports = function (db) {
             let self = this;
             log_item.content = log_item.content || "";
             log_item.process_id = process.pid;
-            return self.db.SystemTaskLog.build(log_item).save().then(item => {
-
-                let options = {
-                    process_id: log_item.process_id, task_id: log_item.task_id
-                };
-
-                // 若当前日志为取消任务日志, 则删除任务进程记录
-                if (log_item.content == self.TaskLogType.CANCELLOG) {
-                    self.db.SystemTaskProcess.destroy({ where: options })
-                }
-
-                return item;
-            });
+            return self.db.SystemTaskLog.build(log_item).save()
         },
 
         /**同步任务进程表 */
-        syncTaskProcess: function () {
+        syncTaskProcess: async function () {
             let self = this;
+
+            const Op = self.db.Sequelize.Op;
+
+            //删除所有进程记录
+            await self.db.SystemTaskProcess.destroy({
+                where: {
+                    process_id: { [Op.gt]: 0 }
+                }
+            })
 
             Object.keys(self.task_list).map(item => {
                 //遍历当前进程运行的任务
-                let task_id = item.split(keyPrefix)[1];
+                let task_id = item.split(TaskKeyPrefix)[1];
                 let task_key = self.getTaskKey(task_id);
                 let queue_length = self.task_list[task_key] && self.task_list[task_key].queue ? self.task_list[task_key].queue.queue.length : 0;
 
                 let options = {
                     process_id: process.pid,
-                    task_id: task_id
+                    task_id: task_id,
+                    queue_length: queue_length
                 };
 
-                self.db.SystemTaskProcess.findOne({ where: options }).then(task_process => {
-                    if (!task_process) {
-                        self.db.SystemTaskProcess.build({ queue_length, ...options }).save()
-                    } else {
-                        self.db.SystemTaskProcess.update({ queue_length: queue_length }, { where: options })
-                    }
-                })
+                self.db.SystemTaskProcess.build(options).save()
             })
         },
 
-        /**初始化Redis Pub/Sub*/
-        initRedisPubSub() {
+        /**初始化Redis SubScribe*/
+        initRedisSubScribe() {
             let self = this;
 
-            //订阅消息处理
+            //#region 普通订阅
+            //普通订阅-监听订阅成功事件
+            sub.on("subscribe", function (channel, count) {
+                console.log("普通订阅成功，频道：" + channel + ", 订阅数" + count);
+            });
+
+            //普通订阅-监听取消订阅事件
+            sub.on("unsubscribe", function (channel, count) {
+                console.log("普通订阅取消成功，频道：" + channel + ", 订阅数" + count);
+            });
+
+            //普通订阅收到消息
             sub.on("message", function (channel, message) {
-                console.log("sub channel " + channel + ": " + message);
+                console.log("接收到频道消息" + channel + ": " + message);
 
                 switch (channel) {
-                    //启动全部
-                    case self.RedisChannelKey.STARTALL:
-                        self.startAll();
-                        break;
                     //停止全部
                     case self.RedisChannelKey.STOPALL:
                         self.stopAll();
@@ -458,60 +488,169 @@ module.exports = function (db) {
                 }
             });
 
-            //遍历订阅
+            //遍历普通订阅
             Object.keys(self.RedisChannelKey).map(item => {
                 sub.subscribe(self.RedisChannelKey[item]);
             })
-            // //订阅-启动全部
-            // sub.subscribe(self.RedisChannelKey.STARTALL);
-            // //订阅-停止全部
-            // sub.subscribe(self.RedisChannelKey.STOPALL);
-            // //订阅-重启单任务
-            // sub.subscribe(self.RedisChannelKey.RESTARTSINGLE);
-            // //订阅-取消单任务
-            // sub.subscribe(self.RedisChannelKey.CANCELSINGLE);
+            //#endregion
+
+            //#region 模式订阅
+            //模式订阅-监听订阅成功事件
+            sub.on("psubscribe", function (pattern, count) {
+                console.log("模式订阅成功，模式：" + pattern + ", 订阅数" + count);
+            });
+
+            //模式订阅-监听取消订阅事件
+            sub.on("punsubscribe", function (pattern, count) {
+                console.log("模式订阅取消成功，模式：" + pattern + ", 订阅数" + count);
+            });
+
+            //模式订阅收到消息
+            sub.on("pmessage", function (pattern, channel, message) {
+                console.log(`模式订阅 收到信息， 模式：${pattern}，频道：${channel}，消息 ${message}`);
+
+                switch (pattern) {
+                    //启动任务
+                    case getRedisPatternKey(self.RedisPatternChannelKey.PatternTaskChannelID):
+                        self.Start(message);
+                        break;
+                }
+            });
+
+            //遍历模式订阅
+            Object.keys(self.RedisPatternChannelKey).map(item => {
+                sub.psubscribe(getRedisPatternKey(self.RedisPatternChannelKey[item]));
+            })
+            //#endregion
+
+            function getRedisPatternKey(item) {
+                return `*${item}*`
+            }
         },
+
         /**
          * 发布Redis消息
-         * @param {*} channelKey 
-         * @param {*} data 
+         * @param {*} channel 
+         * @param {*} data
          */
-        pubRedisChannel: function (channelKey, data) {
-            let self = this;
+        pubRedisChannel: function (channel, data) {
+            data = data || channel;
 
-            data = data ? JSON.stringify(data) : channelKey
+            if (!_.isString(data) && _.isObject(data))
+                data = JSON.stringify(data);
 
-            switch (channelKey) {
-                //启动全部
-                case self.RedisChannelKey.STARTALL:
-                    pub.publish(self.RedisChannelKey.STARTALL, data);
-                    break;
-                //停止全部
-                case self.RedisChannelKey.STOPALL:
-                    pub.publish(self.RedisChannelKey.STOPALL, data);
-                    break;
-                //重启单任务
-                case self.RedisChannelKey.RESTARTSINGLE:
-                    pub.publish(self.RedisChannelKey.RESTARTSINGLE, data);
-                    break;
-                //取消单任务
-                case self.RedisChannelKey.CANCELSINGLE:
-                    pub.publish(self.RedisChannelKey.CANCELSINGLE, data);
-                    break;
-                //取消单任务最近一次运行
-                case self.RedisChannelKey.CANCELNEXTSINGLE:
-                    pub.publish(self.RedisChannelKey.CANCELNEXTSINGLE, data);
-                    break;
-                //同步任务进程表
-                case self.RedisChannelKey.SYNCTASKPROCESS:
-                    pub.publish(self.RedisChannelKey.SYNCTASKPROCESS, data);
-                    break;
-            }
+            console.log("发布频道消息" + channel + ": " + data);
+
+            //发送
+            pub.publish(channel, data);
         }
     }
 
-    // 初始化Redis Pub/Sub
-    TaskMgr.initRedisPubSub();
+    // 初始化Redis SubScribe
+    sub.on("ready", function () {
+        TaskMgr.initRedisSubScribe();
+    });
 
     return TaskMgr;
 }
+
+
+var initTask = [{
+    "task_id": "1",
+    "name": "任务1",
+    "type": "local",
+    "method": null,
+    "path": "D:/WorkSpace/Framework/HapiSimple/tasks/index2.js",
+    "process_number": 1,
+    "parallel_number": 1,
+    "valid": true,
+    "status": "running",
+    "start_time": "2019-07-31T00:00:00.000Z",
+    "end_time": "2019-08-31T15:59:59.000Z",
+    "cron": "*/1 * * * * ?",
+    "description": "任务1"
+}, {
+    "task_id": "2",
+    "name": "任务2",
+    "type": "local",
+    "method": null,
+    "path": "D:/WorkSpace/Framework/HapiSimple/tasks/index2.js",
+    "process_number": 6,
+    "parallel_number": 1,
+    "valid": true,
+    "status": "running",
+    "start_time": "2019-07-30T16:00:00.000Z",
+    "end_time": "2019-08-31T15:59:59.000Z",
+    "cron": "*/2 * * * * ?",
+    "description": "任务2"
+}, {
+    "task_id": "3",
+    "name": "任务3",
+    "type": "local",
+    "method": null,
+    "path": "D:/WorkSpace/Framework/HapiSimple/tasks/index2.js",
+    "process_number": 2,
+    "parallel_number": 1,
+    "valid": true,
+    "status": "running",
+    "start_time": "2019-07-31T00:00:00.000Z",
+    "end_time": "2019-08-31T15:59:59.000Z",
+    "cron": "*/3 * * * * ?",
+    "description": "任务3"
+}, {
+    "task_id": "4",
+    "name": "任务4",
+    "type": "local",
+    "method": null,
+    "path": "D:/WorkSpace/Framework/HapiSimple/tasks/index2.js",
+    "process_number": 3,
+    "parallel_number": 1,
+    "valid": true,
+    "status": "running",
+    "start_time": "2019-07-31T00:00:00.000Z",
+    "end_time": "2019-08-31T15:59:59.000Z",
+    "cron": "*/4 * * * * ?",
+    "description": "任务4"
+}, {
+    "task_id": "5",
+    "name": "任务5",
+    "type": "local",
+    "method": null,
+    "path": "D:/WorkSpace/Framework/HapiSimple/tasks/index.js",
+    "process_number": 4,
+    "parallel_number": 1,
+    "valid": true,
+    "status": "running",
+    "start_time": "2019-07-31T00:00:00.000Z",
+    "end_time": "2019-08-31T15:59:59.000Z",
+    "cron": "*/5 * * * * ?",
+    "description": "任务5"
+}, {
+    "task_id": "6",
+    "name": "博客园",
+    "type": "local",
+    "method": null,
+    "path": "D:/WorkSpace/Framework/HapiSimple/libs/cnblogs/V4/index.js",
+    "process_number": 1,
+    "parallel_number": 1,
+    "valid": false,
+    "status": "running",
+    "start_time": "2019-07-31T00:00:00.000Z",
+    "end_time": "2019-08-31T15:59:59.000Z",
+    "cron": "*/5 * * * * ?",
+    "description": "博客园"
+}, {
+    "task_id": "7",
+    "name": "博客园-消费者",
+    "type": "process",
+    "method": null,
+    "path": "D:/WorkSpace/Framework/HapiSimple/libs/cnblogs/V4/rabbit-consumer.js",
+    "process_number": 1,
+    "parallel_number": 1,
+    "valid": false,
+    "status": "running",
+    "start_time": "2019-07-31T00:00:00.000Z",
+    "end_time": "2019-08-31T15:59:59.000Z",
+    "cron": "*/5 * * * * ?",
+    "description": "博客园-消费者"
+}]

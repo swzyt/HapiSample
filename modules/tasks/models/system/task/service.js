@@ -59,9 +59,10 @@ Service.prototype.create = function (data) {
 
     return self.db.SystemTask.build(data).save().then(item => {
 
-        //初始化任务
-        // self.TaskMgr.Run(item)
-        self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.RESTARTSINGLE, item.toJSON());
+        // 初始化任务
+        // self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.RESTARTSINGLE, item.toJSON());
+        // 启动任务
+        self.TaskMgr.startFromRedis();
 
         return item
     })
@@ -90,8 +91,11 @@ Service.prototype.update = function (where, data) {
     return self.db.SystemTask.update(data, { where: where }).then(result => {
 
         self.get(where).then(item => {
+            // 先取消并删除
+            self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.CANCELSINGLE, item.task_id);
             // 重启任务
-            self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.RESTARTSINGLE, item.toJSON());
+            self.TaskMgr.startFromRedis();
+            // self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.RESTARTSINGLE, item.toJSON());
         })
 
         return result;
@@ -116,13 +120,11 @@ Service.prototype.clearRedis = function () {
     return null;
 };
 
-Service.prototype.startAll = function () {
+Service.prototype.startFromRedis = function () {
 
     var self = this;
 
-    self.TaskMgr.initRedis().then(() => {
-        self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.STARTALL);
-    })
+    self.TaskMgr.startFromRedis();
 
     return null;
 };

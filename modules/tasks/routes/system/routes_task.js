@@ -97,15 +97,15 @@ module.exports = function (server, models) {
         },
         {
             method: 'GET',
-            path: '/system/tasks/startall',
+            path: '/system/tasks/startfromredis',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
-                description: '手动启动全部任务',
-                // validate: models.system.task.validator.startAll.request,
-                notes: '手动启动全部任务',
-                // response: models.system.task.validator.startAll.response,
-                handler: models.system.task.controller.startAll
+                description: '从Redis开始任务',
+                // validate: models.system.task.validator.startFromRedis.request,
+                notes: '从Redis开始任务',
+                // response: models.system.task.validator.startFromRedis.response,
+                handler: models.system.task.controller.startFromRedis
             }
         },
         {
