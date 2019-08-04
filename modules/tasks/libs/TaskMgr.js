@@ -292,7 +292,8 @@ module.exports = function (db) {
                                     })
                                 }
 
-                                task_log.content = run_limit_result || "无redis结果";
+
+                                task_log.content = `日志类型：运行日志\n日志内容：${task_log.content}`;
 
                                 task_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
 
@@ -427,7 +428,7 @@ module.exports = function (db) {
 
             log_item.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
 
-            log_item.content = content;
+            log_item.content = `日志类型：启停日志\n日志内容：${content}`;
 
             return this.saveLog(log_item);
         },
