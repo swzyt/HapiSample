@@ -23,7 +23,7 @@ module.exports = function (sequelize, DataTypes) {
       comment: "下次执行时间"
     },
     content: {
-      type: DataTypes.TEXT(),
+      type: DataTypes.TEXT({ length: 'medium' }),
       allowNull: false,
       comment: "日志内容"
     },

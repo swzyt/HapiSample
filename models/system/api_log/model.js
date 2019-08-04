@@ -38,12 +38,12 @@ module.exports = function (sequelize, DataTypes) {
       comment: ""
     },
     request: {
-      type: DataTypes.TEXT,
+      type: DataTypes.TEXT({ length: 'medium' }),
       allowNull: true,
       comment: ""
     },
     response: {
-      type: DataTypes.TEXT,
+      type: DataTypes.TEXT({ length: 'medium' }),
       allowNull: true,
       comment: ""
     },
