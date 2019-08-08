@@ -17,7 +17,7 @@ const MaxProcessCount = cluster.worker ? cluster.worker.process.env.instances : 
 const RedisTaskListKeyPrefix = 'LOCAL-TASK-LIST';
 
 /**Redis Run Limit KEY 前缀 */
-const RedisRunLimitKeyPrefix = 'LOCAL-TASK-Run-Limit';
+const RedisRunLimitKeyPrefix = 'LOCAL-TASK-RUN-LIMIT';
 
 module.exports = function (db) {
 
@@ -27,7 +27,17 @@ module.exports = function (db) {
 
     var TaskMgr = {
 
-        /**Redis 普通订阅 KEY*/
+        /**数据库连接对象 */
+        db,
+
+        /**运行中的任务列表 */
+        task_list: {
+        },
+
+
+        //#region 常量定义 · 开始
+
+        /**Redis 普通订阅 KEY */
         RedisChannelKey: {
             /**停止全部*/
             STOPALL: `${RedisTaskListKeyPrefix}-StopAll`,
@@ -40,13 +50,13 @@ module.exports = function (db) {
             /**同步任务进程表*/
             SYNCTASKPROCESS: `${RedisTaskListKeyPrefix}-SyncTaskProcess`,
         },
-        /**Redis 模式订阅 KEY*/
+        /**Redis 模式订阅 KEY */
         RedisPatternChannelKey: {
             /**订阅任务ID，模式匹配 */
             PatternTaskChannelID: `${RedisTaskListKeyPrefix}-TaskChannelID-`
         },
 
-        /**任务日志描述*/
+        /**任务日志描述 */
         TaskLogType: {
             /**启动任务 */
             STARTLOG: '启动任务',
@@ -56,34 +66,35 @@ module.exports = function (db) {
             CANCELNEXTLOG: '取消最近一次的执行任务'
         },
 
-        /**数据库连接对象*/
-        db,
+        //#endregion 常量定义 · 结束
 
-        /**运行中的任务列表*/
-        task_list: {
-        },
 
-        /**初始化任务列表至Redis*/
-        async initRedis() {
+        //#region Redis · 开始
+
+        /**初始化Redis All */
+        async initRedisAll() {
             let self = this;
 
-            //清除队列
-            await self.clearRedis();
-
-            // 初始化任务记录
-            // await self.db.SystemTask.bulkCreate(initTask);
-
-            //写入新记录
             let tasks = await self.db.SystemTask.findAll({ where: { valid: true, status: 'running' } })
             if (tasks && tasks.length > 0) {
-                //添加到redis
                 for (let i = 0; i < tasks.length; i++) {
-                    await self.pushToRedis(tasks[i])
+                    if (self.checkTaskItemValid(tasks[i])) {
+                        await self.initRedisSingle(tasks[i])
+                    }
                 }
             }
         },
 
-        /**push至Redis */
+        /**初始化Redis Single */
+        async initRedisSingle(item) {
+            let self = this;
+
+            await self.clearRedisSingle(item.task_id);
+
+            await self.pushToRedis(item);
+        },
+
+        /**push 任务列表、任务运行次数限制 至Redis */
         async pushToRedis(item) {
             let self = this;
 
@@ -94,355 +105,43 @@ module.exports = function (db) {
             let redis_task_key = `${RedisTaskListKeyPrefix}:${item.task_id}`;
             await self.db.cache.client.rpushAsync(redis_task_key, ...Array.from({ length: self.getRunCount(item.process_number) }, (item, index) => { return item_str }));
 
-            //设置任务可运行次数
+            // 设置任务可运行次数
             let redis_run_limit_key = `${RedisRunLimitKeyPrefix}:${item.task_id}`;
             await self.db.cache.client.rpushAsync(redis_run_limit_key, ...Array.from({ length: item.run_limit }, (item, index) => { return redis_run_limit_key }));
         },
 
-        /**清除Redis任务列表、运行次数限制*/
-        async clearRedis() {
+        /**清除Redis All 任务列表、运行次数限制 */
+        async clearRedisAll() {
             let self = this;
 
-            //清除任务列表
+            // 清除任务列表
             let keys = await self.db.cache.client.keysAsync(`${RedisTaskListKeyPrefix}*`);
             if (keys && keys.length > 0) {
                 for (let i = 0; i < keys.length; i++) {
-                    //删除KEY
-                    await self.db.cache.client.delAsync(keys[i]);
+                    await self.delRedis(keys[i]);
                 }
             }
-            //清除任务运行次数限制列表
+            // 清除任务运行次数限制列表
             keys = await self.db.cache.client.keysAsync(`${RedisRunLimitKeyPrefix}*`);
             if (keys && keys.length > 0) {
                 for (let i = 0; i < keys.length; i++) {
-                    //删除KEY
-                    await self.db.cache.client.delAsync(keys[i]);
+                    await self.delRedis(keys[i]);
                 }
             }
         },
+        /**清除Redis Single 任务列表、运行次数限制 */
+        async clearRedisSingle(task_id) {
 
-        /**从Redis开始任务*/
-        async startFromRedis() {
-            let self = this;
+            // 清除任务列表
+            await this.delRedis(`${RedisTaskListKeyPrefix}:${task_id}`);
 
-            await self.initRedis();
-
-            let keys = await self.db.cache.client.keysAsync(`${RedisTaskListKeyPrefix}*`);
-
-            if (keys && keys.length > 0) {
-                for (let i = 0; i < keys.length; i++) {
-                    let key = keys[i];
-
-                    let channel = `${self.RedisPatternChannelKey.PatternTaskChannelID}${key.split(':')[1]}`;
-
-                    //通知各进程运行任务
-                    self.pubRedisChannel(channel, key);
-                }
-            }
+            // 清除任务运行次数限制列表
+            await this.delRedis(`${RedisRunLimitKeyPrefix}:${task_id}`);
         },
 
-        /**获取任务运行最大进程数 */
-        getRunCount: function (number) {
-            number = number || 1;
-            return number > MaxProcessCount ? MaxProcessCount : number;
-        },
-
-        /**
-         * 检测任务在当前进程是否存在
-         * @param {*} task_id 
-         */
-        checkTaskList(task_id) {
-            let result = task_id && this.task_list[task_id];
-
-            console.log(`任务 ${task_id} 在当前进程 ${process.pid} 中 ${result ? '已存在' : '不存在'}`)
-
-            return result;
-        },
-
-        /**
-         * 检测任务有效性
-         * @param {*} item 
-         */
-        checkTaskItemValid(item) {
-            let result = item &&
-                item.valid &&
-                item.status == "running" &&
-                item.path &&
-                item.cron &&
-                item.parallel_number &&
-                item.process_number &&
-                item.run_limit &&
-                (!item.start_time || moment().isAfter(moment(item.start_time))) &&
-                (!item.end_time || moment().isBefore(moment(item.end_time)))
-
-            console.log(`任务 ${item.task_id} 在当前进程 ${process.pid} 中 ${result ? '可运行' : '不可运行'}`)
-
-            return result;
-        },
-
-        /**启动任务*/
-        Start: async function (channel) {
-            let self = this;
-
-            //从redis 队列头部取出待执行的任务
-            let redisItem = await self.db.cache.client.lpopAsync(channel);
-
-            if (redisItem) {
-                let item = JSON.parse(redisItem)
-
-                //任务未在当前进程运行，且任务配置有效，则运行
-                if (!self.checkTaskList(item.task_id) && self.checkTaskItemValid(item)) {
-                    await self.Run(item)
-                }
-            }
-        },
-
-        /**停止全部*/
-        stopAll: async function () {
-            let self = this;
-
-            //清除队列
-            await self.clearRedis();
-
-            Object.keys(self.task_list).map(task_id => {
-                //遍历当前进程运行的任务，并全部取消
-                self.Cancel(task_id);
-            })
-
-            return Promise.resolve(true);
-        },
-
-        /**
-         * 运行任务
-         * @param {*} item 
-         */
-        Run: async function (item) {
-            let self = this;
-
-            try {
-                //是否正在本进程运行
-                if (self.checkTaskList(item.task_id)) {
-                    return null;
-                }
-
-                //检测任务有效性
-                if (!self.checkTaskItemValid(item)) {
-                    return null;
-                }
-
-                if (item.type == "local" || item.type == "remote") {
-                    //任务执行计划
-                    let job_rule = { rule: item.cron };
-
-                    if (item.start_time) {
-                        job_rule.start = item.start_time;
-                    }
-                    if (item.end_time) {
-                        job_rule.end = item.end_time;
-                    }
-
-                    let job = schedule.scheduleJob(item.task_id, job_rule, async function () {
-
-                        const t = async function () {
-                            //判断任务执行次数，若超过限制，则取消任务，为0则不限制
-                            let redis_run_limit_key = `${RedisRunLimitKeyPrefix}:${item.task_id}`;
-                            let run_limit_result = await self.db.cache.client.lpopAsync(redis_run_limit_key);
-                            if (item.run_limit > 0 && !run_limit_result) {
-                                //发布取消消息
-                                self.pubRedisChannel(self.RedisChannelKey.CANCELSINGLE, item.task_id);
-                            }
-                            else {
-                                //运行日志
-                                let task_log = self.getLogItem(item.task_id, job);
-
-                                try {
-                                    // let fun = require("D:/WorkSpace/Framework/HapiSimple/tasks/index.js")
-                                    //本地任务
-                                    if (item.type == "local") {
-                                        let fun = require(item.path);
-                                        if (_.isFunction(fun))
-                                            task_log.content = JSON.stringify(await fun());
-                                        else
-                                            task_log.content = "当前任务非可执行函数";
-                                    }
-                                    //远程任务
-                                    else if (item.type == "remote") {
-                                        task_log.content = await restler[item.method](item.path, JSON.parse(item.params));
-                                    }
-                                }
-                                catch (err) {
-                                    //异常日志
-                                    task_log.content = JSON.stringify({
-                                        code: err.code,
-                                        message: err.message,
-                                        stack: err.stack
-                                    })
-                                }
-
-
-                                task_log.content = `日志类型：运行日志\n日志内容：${task_log.content || ''}`;
-
-                                task_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
-
-                                await self.saveLog(task_log)
-
-                                //本次任务执行完毕，执行下一次计划
-                                self.task_list[item.task_id] && self.task_list[item.task_id].queue && self.task_list[item.task_id].queue._next();
-                            }
-
-                        }
-
-                        //推入任务待执行队列，控制并行数
-                        self.task_list[item.task_id] && self.task_list[item.task_id].queue && self.task_list[item.task_id].queue.push(t)
-
-                    });
-
-                    //初始化当前任务执行队列，可控制并行数
-                    let queue = new Bagpipe(item.parallel_number || 1)
-                    queue.on('full', function (length) {
-                        console.warn(`任务 ${item.task_id} 待执行队列长度为: ${length}`);
-                    });
-
-                    //保存任务对象
-                    self.task_list[item.task_id] = { job: job, queue: queue };
-                }
-                else if (item.type == "process") {
-
-                    let pro = require(item.path);
-
-                    //启动任务
-                    pro && pro.start && pro.start();
-
-                    //保存任务对象
-                    self.task_list[item.task_id] = { process: [pro] };
-                }
-
-                //启动任务日志
-                await self.saveNormalLog(item.task_id, self.TaskLogType.STARTLOG);
-
-                return null;
-            }
-            catch (err) {
-                console.log(err)
-                return err
-            }
-        },
-
-        /**
-         * 重启任务
-         * @param {*} item
-         */
-        ReStart: async function (item) {
-            if (this.checkTaskList(item.task_id)) {
-                //先取消
-                await this.Cancel(item.task_id);
-
-                //再运行
-                return await this.Run(item);
-            }
-
-            return null;
-        },
-
-        /**
-         * 取消任务
-         * 所有的计划调用将会被取消。当你设置 reschedule 参数为true，然后任务将在之后重新排列。
-         * @param {*} task_id 
-         */
-        Cancel: async function (task_id, reschedule = false) {
-            if (this.checkTaskList(task_id)) {
-                //本地任务或远程任务
-                if (this.task_list[task_id] && this.task_list[task_id].job) {
-                    this.task_list[task_id].job.cancel(reschedule);
-                }
-                //本次进程任务
-                else if (this.task_list[task_id] && this.task_list[task_id].process) {
-                    this.task_list[task_id].process.map(item => {
-                        item.exit && item.exit();
-                    })
-                }
-                delete this.task_list[task_id]
-
-                //取消日志
-                return await this.saveNormalLog(task_id, this.TaskLogType.CANCELLOG);
-            }
-            return null;
-        },
-
-        /**
-         * 取消最近一次的执行任务
-         * 这个方法将能将能取消下一个计划的调度或者任务. 当你设置 reschedule 参数为true，然后任务将在之后重新排列。
-         * @param {*} task_id 
-         */
-        CancelNext: async function (task_id, reschedule = false) {
-            if (this.checkTaskList(task_id)) {
-
-                if (this.task_list[task_id] && this.task_list[task_id].job) {
-                    this.task_list[task_id].job.cancelNext(reschedule);
-
-                    //取消最近一次的执行任务日志
-                    return await this.saveNormalLog(task_id, this.TaskLogType.CANCELNEXTLOG);
-                }
-
-            }
-            return null;
-        },
-
-        /**
-         * 实例化日志对象
-         * @param {*} task_id 
-         * @param {*} job 
-         */
-        getLogItem: function (task_id, job) {
-            return {
-                task_id,
-                start_time: moment().format("YYYY-MM-DD HH:mm:ss"),
-                next_time: job && job.nextInvocation() ? moment(job.nextInvocation().getTime()).format("YYYY-MM-DD HH:mm:ss") : null
-            }
-        },
-
-        /**
-         * 任务操作日志，创建，重启，停止等
-         * @param {*} task_id 
-         * @param {*} content 
-         */
-        saveNormalLog(task_id, content) {
-            let log_item = this.getLogItem(task_id, this.task_list[task_id] ? this.task_list[task_id].job : null);
-
-            log_item.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
-
-            log_item.content = `日志类型：启停日志\n日志内容：${content}`;
-
-            return this.saveLog(log_item);
-        },
-
-        /**
-         * 保存日志
-         * @param {*} log_item 
-         */
-        saveLog: function (log_item) {
-            let self = this;
-            log_item.content = log_item.content || "";
-            log_item.process_id = process.pid;
-            return self.db.SystemTaskLog.build(log_item).save()
-        },
-
-        /**同步任务进程表 */
-        syncTaskProcess: async function () {
-            let self = this;
-
-            Object.keys(self.task_list).map(task_id => {
-                //遍历当前进程运行的任务
-                let queue_length = self.task_list[task_id] && self.task_list[task_id].queue ? self.task_list[task_id].queue.queue.length : 0;
-
-                let options = {
-                    process_id: process.pid,
-                    task_id: task_id,
-                    queue_length: queue_length
-                };
-
-                self.db.SystemTaskProcess.build(options).save();
-            })
+        /**删除Redis KEY */
+        async delRedis(key) {
+            return await this.db.cache.client.delAsync(key);
         },
 
         /**初始化Redis SubScribe*/
@@ -468,10 +167,6 @@ module.exports = function (db) {
                     //停止全部
                     case self.RedisChannelKey.STOPALL:
                         self.stopAll();
-                        break;
-                    //重启单任务
-                    case self.RedisChannelKey.RESTARTSINGLE:
-                        self.ReStart(JSON.parse(message))
                         break;
                     //取消单任务
                     case self.RedisChannelKey.CANCELSINGLE:
@@ -528,11 +223,7 @@ module.exports = function (db) {
             }
         },
 
-        /**
-         * 发布Redis消息
-         * @param {*} channel 
-         * @param {*} data
-         */
+        /** 发布Redis频道消息 */
         pubRedisChannel: async function (channel, data) {
             data = data || channel;
 
@@ -543,6 +234,319 @@ module.exports = function (db) {
 
             //发送
             return await pub.publishAsync(channel, data);
+        },
+
+        //#endregion Redis · 结束
+
+
+        //#region 任务检测 · 开始
+
+        /**获取任务运行最大进程数 */
+        getRunCount: function (number) {
+            number = number || 1;
+            return number > MaxProcessCount ? MaxProcessCount : number;
+        },
+
+        /**检测任务在当前进程是否存在 */
+        checkTaskList(task_id) {
+            let result = task_id && this.task_list[task_id];
+
+            console.log(`任务 ${task_id} 在当前进程 ${process.pid} 中 ${result ? '已存在' : '不存在'}`)
+
+            return result;
+        },
+
+        /**检测任务有效性 */
+        checkTaskItemValid(item) {
+            let result = item &&
+                item.valid &&
+                item.status == "running" &&
+                item.path &&
+                item.cron &&
+                item.parallel_number &&
+                item.process_number &&
+                item.run_limit &&
+                (!item.start_time || moment().isAfter(moment(item.start_time))) &&
+                (!item.end_time || moment().isBefore(moment(item.end_time)))
+
+            console.log(`任务 ${item.task_id} 在当前进程 ${process.pid} 中 ${result ? '可运行' : '不可运行'}`)
+
+            return result;
+        },
+
+        //#endregion 任务检测 · 结束
+
+
+        //#region 任务运行 · 开始
+        /**启动全部任务 */
+        async startAll() {
+            let self = this;
+
+            let keys = await self.db.cache.client.keysAsync(`${RedisTaskListKeyPrefix}*`);
+
+            if (keys && keys.length > 0) {
+                for (let i = 0; i < keys.length; i++) {
+                    let key = keys[i];
+
+                    let channel = `${self.RedisPatternChannelKey.PatternTaskChannelID}${key.split(':')[1]}`;
+
+                    //通知各进程运行任务
+                    await self.pubRedisChannel(channel, key);
+                }
+            }
+            return keys.length;
+        },
+
+        /**启动单项任务 */
+        async startSingle(item) {
+            let self = this;
+
+            await self.initRedisSingle(item);
+
+            let channel = `${self.RedisPatternChannelKey.PatternTaskChannelID}${item.task_id}`;
+
+            //通知各进程运行任务
+            await self.pubRedisChannel(channel, `${RedisTaskListKeyPrefix}:${item.task_id}`);
+        },
+
+        /**启动任务 */
+        Start: async function (channel) {
+            let self = this;
+
+            //从redis 队列头部取出待执行的任务
+            let redisItem = await self.db.cache.client.lpopAsync(channel);
+
+            if (redisItem) {
+                return await self.Run(JSON.parse(redisItem))
+            }
+            return null;
+        },
+
+        /**停止全部 */
+        stopAll: async function () {
+            let self = this;
+
+            // 清除Redis All 任务列表、运行次数限制
+            await self.clearRedisAll();
+
+            Object.keys(self.task_list).map(task_id => {
+                // 遍历当前进程运行的任务，并全部取消
+                self.Cancel(task_id);
+            })
+
+            return Promise.resolve(true);
+        },
+
+        /**运行任务 */
+        Run: async function (item) {
+            let self = this;
+
+            try {
+                //是否正在本进程运行
+                if (self.checkTaskList(item.task_id)) {
+                    return null;
+                }
+
+                //检测任务有效性
+                if (!self.checkTaskItemValid(item)) {
+                    return null;
+                }
+
+                if (item.type == "local" || item.type == "remote") {
+                    //任务执行计划
+                    let job_rule = { rule: item.cron };
+
+                    if (item.start_time) {
+                        job_rule.start = item.start_time;
+                    }
+                    if (item.end_time) {
+                        job_rule.end = item.end_time;
+                    }
+
+                    let job = schedule.scheduleJob(item.task_id, job_rule, async function () {
+
+                        const t = async function () {
+                            //判断任务执行次数，若超过限制，则取消任务，为0则不限制
+                            let redis_run_limit_key = `${RedisRunLimitKeyPrefix}:${item.task_id}`;
+                            let run_limit_result = await self.db.cache.client.lpopAsync(redis_run_limit_key);
+                            if (item.run_limit > 0 && !run_limit_result) {
+                                //发布取消消息
+                                self.pubRedisChannel(self.RedisChannelKey.CANCELSINGLE, item.task_id);
+                            }
+                            else {
+                                //运行日志
+                                let task_log = self.getLogItem(item.task_id, job);
+
+                                try {
+                                    // let fun = require("D:/WorkSpace/Framework/HapiSimple/tasks/index.js")
+                                    //本地任务
+                                    if (item.type == "local") {
+                                        let fun = require(item.path);
+                                        if (_.isFunction(fun))
+                                            task_log.content = JSON.stringify(await fun());
+                                        else
+                                            task_log.content = "当前任务非可执行函数";
+                                    }
+                                    //远程任务
+                                    else if (item.type == "remote") {
+                                        task_log.content = JSON.stringify(await restler[item.method](item.path, JSON.parse(item.params)));
+                                    }
+                                }
+                                catch (err) {
+                                    //异常日志
+                                    task_log.content = JSON.stringify({
+                                        code: err.code,
+                                        message: err.message,
+                                        stack: err.stack
+                                    })
+                                }
+
+
+                                task_log.content = `日志类型：运行日志\n日志内容：${task_log.content || ''}`;
+
+                                task_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
+
+                                await self.saveLog(task_log)
+
+                                //本次任务执行完毕，执行下一次计划
+                                self.task_list[item.task_id] && self.task_list[item.task_id].queue && self.task_list[item.task_id].queue._next();
+                            }
+                        }
+
+                        //推入任务待执行队列，控制并行数
+                        self.task_list[item.task_id] && self.task_list[item.task_id].queue && self.task_list[item.task_id].queue.push(t)
+
+                    });
+
+                    //初始化当前任务执行队列，可控制并行数
+                    let queue = new Bagpipe(item.parallel_number || 1)
+                    queue.on('full', function (length) {
+                        console.warn(`任务 ${item.task_id} 待执行队列长度为: ${length}`);
+                    });
+
+                    //保存任务对象
+                    self.task_list[item.task_id] = { job: job, queue: queue };
+                }
+                else if (item.type == "process") {
+
+                    let pro = require(item.path);
+
+                    //启动任务
+                    pro && pro.start && pro.start();
+
+                    //保存任务对象
+                    self.task_list[item.task_id] = { process: [pro] };
+                }
+
+                //启动任务日志
+                await self.saveNormalLog(item.task_id, self.TaskLogType.STARTLOG);
+
+                return null;
+            }
+            catch (err) {
+                console.log(err)
+                return err
+            }
+        },
+
+        /**
+         * 取消任务
+         * 所有的计划调用将会被取消。当你设置 reschedule 参数为true，然后任务将在之后重新排列。
+         * @param {*} task_id 
+         */
+        Cancel: async function (task_id, reschedule = false) {
+
+            if (this.checkTaskList(task_id)) {
+                //本地任务或远程任务
+                if (this.task_list[task_id] && this.task_list[task_id].job) {
+                    this.task_list[task_id].job.cancel(reschedule);
+                }
+                //本次进程任务
+                else if (this.task_list[task_id] && this.task_list[task_id].process) {
+                    this.task_list[task_id].process.map(item => {
+                        item.exit && item.exit();
+                    })
+                }
+                delete this.task_list[task_id]
+
+                //取消日志
+                return await this.saveNormalLog(task_id, this.TaskLogType.CANCELLOG);
+            }
+            return null;
+        },
+
+        /**
+         * 取消最近一次的执行任务
+         * 这个方法将能将能取消下一个计划的调度或者任务. 当你设置 reschedule 参数为true，然后任务将在之后重新排列。
+         * @param {*} task_id 
+         */
+        CancelNext: async function (task_id, reschedule = false) {
+            if (this.checkTaskList(task_id)) {
+
+                if (this.task_list[task_id] && this.task_list[task_id].job) {
+                    this.task_list[task_id].job.cancelNext(reschedule);
+
+                    //取消最近一次的执行任务日志
+                    return await this.saveNormalLog(task_id, this.TaskLogType.CANCELNEXTLOG);
+                }
+
+            }
+            return null;
+        },
+
+        //#endregion 任务运行 · 结束
+
+
+        //#region 任务日志 · 开始
+
+        /**实例化日志对象 */
+        getLogItem: function (task_id, job) {
+            return {
+                task_id,
+                start_time: moment().format("YYYY-MM-DD HH:mm:ss"),
+                next_time: job && job.nextInvocation() ? moment(job.nextInvocation().getTime()).format("YYYY-MM-DD HH:mm:ss") : null
+            }
+        },
+
+        /**任务操作日志，创建，重启，停止等 */
+        saveNormalLog(task_id, content) {
+            let log_item = this.getLogItem(task_id, this.task_list[task_id] ? this.task_list[task_id].job : null);
+
+            log_item.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
+
+            log_item.content = `日志类型：启停日志\n日志内容：${content}`;
+
+            return this.saveLog(log_item);
+        },
+
+        /**保存日志 */
+        saveLog: function (log_item) {
+            let self = this;
+            log_item.content = log_item.content || "";
+            log_item.process_id = process.pid;
+            return self.db.SystemTaskLog.build(log_item).save()
+        },
+
+        //#endregion 任务日志 · 结束
+
+
+        /**同步任务进程表 */
+        syncTaskProcess: async function () {
+            let self = this;
+
+            //遍历任务列表
+            Object.keys(self.task_list).map(task_id => {
+                //获取任务待执行队列数
+                let queue_length = self.task_list[task_id] && self.task_list[task_id].queue ? self.task_list[task_id].queue.queue.length : 0;
+
+                let options = {
+                    process_id: process.pid,
+                    task_id: task_id,
+                    queue_length: queue_length
+                };
+
+                self.db.SystemTaskProcess.build(options).save();
+            })
         }
     }
 
@@ -554,7 +558,7 @@ module.exports = function (db) {
     return TaskMgr;
 }
 
-var initTask = [{
+var initTaskList = [{
     "name": "定时更新任务进程",
     "type": "remote",
     "method": "get",

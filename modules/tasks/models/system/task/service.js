@@ -57,12 +57,10 @@ Service.prototype.create = function (data) {
 
     let self = this;
 
-    return self.db.SystemTask.build(data).save().then(item => {
+    return self.db.SystemTask.build(data).save().then((item) => {
 
-        // 初始化任务
-        // self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.RESTARTSINGLE, item.toJSON());
         // 启动任务
-        self.TaskMgr.startFromRedis();
+        self.TaskMgr.startSingle(item);
 
         return item;
     })
@@ -71,11 +69,14 @@ Service.prototype.create = function (data) {
 Service.prototype.delete = function (where) {
     let self = this;
 
-    return self.db.SystemTask.findOne({ where: where }).then(function (item) {
+    return self.db.SystemTask.findOne({ where: where }).then(async function (item) {
         if (item) {
 
+            // 先清除单项任务Redis
+            await self.TaskMgr.clearRedisSingle(item.task_id);
+
             // 取消并删除
-            self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.CANCELSINGLE, item.task_id);
+            await self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.CANCELSINGLE, item.task_id);
 
             return item.destroy();
         }
@@ -84,60 +85,68 @@ Service.prototype.delete = function (where) {
     });
 };
 //更新单个
-Service.prototype.update = function (where, data) {
+Service.prototype.update = async function (where, data) {
 
     var self = this;
+
+    // 先清除单项任务Redis
+    await self.TaskMgr.clearRedisSingle(item.task_id);
+    // 先取消并删除
+    await self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.CANCELSINGLE, where.task_id);
 
     return self.db.SystemTask.update(data, { where: where }).then(result => {
 
         self.get(where).then(item => {
-            // 先取消并删除
-            self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.CANCELSINGLE, item.task_id);
             // 重启任务
-            self.TaskMgr.startFromRedis();
-            // self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.RESTARTSINGLE, item.toJSON());
+            self.TaskMgr.startSingle(item);
         })
 
         return result;
     })
 };
 
-Service.prototype.initRedis = function () {
+Service.prototype.initRedisAll = async function () {
 
     var self = this;
 
-    return self.TaskMgr.initRedis();
+    return await self.TaskMgr.initRedisAll();
 };
 
-Service.prototype.clearRedis = function () {
+Service.prototype.clearRedisAll = async function () {
 
     var self = this;
 
-    return self.TaskMgr.clearRedis();
+    return await self.TaskMgr.clearRedisAll();
 };
 
-Service.prototype.startFromRedis = function () {
+Service.prototype.startAll = async function () {
 
     var self = this;
 
-    return self.TaskMgr.startFromRedis();;
+    //初始化Redis
+    await self.TaskMgr.initRedisAll();
+
+    return await self.TaskMgr.startAll();
 };
 
-Service.prototype.stopAll = function () {
+Service.prototype.stopAll = async function () {
 
     var self = this;
 
-    return self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.STOPALL);
+    //清除Redis
+    await self.TaskMgr.clearRedisAll();
+
+    return await self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.STOPALL);
 };
 
-Service.prototype.syncTaskProcess = function () {
+Service.prototype.syncTaskProcess = async function () {
 
     var self = this;
 
     //删除所有进程记录
-    return self.db.SystemTaskProcess.destroy({ where: { process_id: { $gt: 0 } } }).then(() => {
-        return self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.SYNCTASKPROCESS);
-    })
+    await self.db.SystemTaskProcess.destroy({ where: { process_id: { $gt: 0 } } })
+
+    return await self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.SYNCTASKPROCESS);
 };
 
 

@@ -98,8 +98,8 @@ Controller.prototype.update = function (request, h) {
     })
 };
 
-Controller.prototype.initRedis = function (request, h) {
-    return this.service.initRedis().then(function (result) {
+Controller.prototype.initRedisAll = function (request, h) {
+    return this.service.initRedisAll().then(function (result) {
         return h.success(result);
 
     }).catch(function (err) {
@@ -107,8 +107,8 @@ Controller.prototype.initRedis = function (request, h) {
     })
 };
 
-Controller.prototype.clearRedis = function (request, h) {
-    return this.service.clearRedis().then(function (result) {
+Controller.prototype.clearRedisAll = function (request, h) {
+    return this.service.clearRedisAll().then(function (result) {
         return h.success(result);
 
     }).catch(function (err) {
@@ -116,8 +116,8 @@ Controller.prototype.clearRedis = function (request, h) {
     })
 };
 
-Controller.prototype.startFromRedis = function (request, h) {
-    return this.service.startFromRedis().then(function (result) {
+Controller.prototype.startAll = function (request, h) {
+    return this.service.startAll().then(function (result) {
         return h.success(result);
 
     }).catch(function (err) {

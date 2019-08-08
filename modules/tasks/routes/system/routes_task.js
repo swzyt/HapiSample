@@ -71,41 +71,41 @@ module.exports = function (server, models) {
         },
         {
             method: 'GET',
-            path: '/system/tasks/initredis',
+            path: '/system/tasks/initredisall',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
                 description: '初始化redis任务队列',
-                // validate: models.system.task.validator.initRedis.request,
+                // validate: models.system.task.validator.initRedisAll.request,
                 notes: '初始化redis任务队列',
-                // response: models.system.task.validator.initRedis.response,
-                handler: models.system.task.controller.initRedis
+                // response: models.system.task.validator.initRedisAll.response,
+                handler: models.system.task.controller.initRedisAll
             }
         },
         {
             method: 'GET',
-            path: '/system/tasks/clearredis',
+            path: '/system/tasks/clearredisall',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
                 description: '清除redis任务队列',
-                // validate: models.system.task.validator.clearRedis.request,
+                // validate: models.system.task.validator.clearRedisAll.request,
                 notes: '清除redis任务队列',
-                // response: models.system.task.validator.clearRedis.response,
-                handler: models.system.task.controller.clearRedis
+                // response: models.system.task.validator.clearRedisAll.response,
+                handler: models.system.task.controller.clearRedisAll
             }
         },
         {
             method: 'GET',
-            path: '/system/tasks/startfromredis',
+            path: '/system/tasks/startall',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
-                description: '从Redis启动全部有效任务',
-                // validate: models.system.task.validator.startFromRedis.request,
-                notes: '从Redis启动全部有效任务',
-                // response: models.system.task.validator.startFromRedis.response,
-                handler: models.system.task.controller.startFromRedis
+                description: '手动启动全部有效任务',
+                // validate: models.system.task.validator.startAll.request,
+                notes: '手动启动全部有效任务',
+                // response: models.system.task.validator.startAll.response,
+                handler: models.system.task.controller.startAll
             }
         },
         {
