@@ -75,6 +75,7 @@ module.exports = {
                 name: Joi.string().max(100).allow(['', null]).description('名称'),
                 description: Joi.string().allow(['', null]).description('描述'),
                 valid: Joi.string().allow(['', null]).description('是否有效'),
+                keyword: Joi.string().max(100).allow(['', null]).description('关键词搜索'),
                 created_at: Joi.string().allow(['', null]).description('创建时间'),
                 updated_at: Joi.string().allow(['', null]).description('更新时间'),
                 ...page_size_number
@@ -85,7 +86,25 @@ module.exports = {
                 code: Joi.number().integer().description("返回代码"),
                 message: Joi.string().description('返回信息'),
                 total: Joi.number().integer().description('数据总数'),
-                data: Joi.array().items(Joi.object(ResponseModel).meta({ className: PREFIX + "ListResponseData" }))
+                data: Joi.array().meta({ className: PREFIX + "ListResponseData" })
+            }).meta({ className: PREFIX + "ListResponse" }).required().description("返回消息体"),
+            status: Status
+        }
+    },
+    //按分页方式获取对象数据的请求响应消息体
+    loglist: {
+        request: {
+            query: {
+                keyword: Joi.string().max(100).allow(['', null]).description('关键词搜索'),
+                ...page_size_number
+            }
+        },
+        response: {
+            schema: Joi.object({
+                code: Joi.number().integer().description("返回代码"),
+                message: Joi.string().description('返回信息'),
+                total: Joi.number().integer().description('数据总数'),
+                data: Joi.array().meta({ className: PREFIX + "ListResponseData" })
             }).meta({ className: PREFIX + "ListResponse" }).required().description("返回消息体"),
             status: Status
         }

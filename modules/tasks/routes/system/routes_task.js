@@ -6,7 +6,7 @@ module.exports = function (server, models) {
     server.route([
         {
             method: 'GET',
-            path: '/system/tasks',
+            path: '/systemtasks/v2/tasks',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
@@ -18,8 +18,21 @@ module.exports = function (server, models) {
             }
         },
         {
+            method: 'GET',
+            path: '/systemtasks/v2/tasks/loglist',
+            config: {
+                auth: 'default',
+                tags: ['api', 'system-task'],
+                description: '分页方式获取任务日志列表信息',
+                validate: models.system.task.validator.loglist.request,
+                notes: '分页方式获取任务日志列表信息',
+                response: models.system.task.validator.loglist.response,
+                handler: models.system.task.controller.loglist
+            }
+        },
+        {
             method: 'POST',
-            path: '/system/tasks',
+            path: '/systemtasks/v2/tasks',
             config: {
                 auth: false,
                 tags: ['api', 'system-task'],
@@ -32,7 +45,7 @@ module.exports = function (server, models) {
         },
         {
             method: 'GET',
-            path: '/system/tasks/{task_id}',
+            path: '/systemtasks/v2/tasks/{task_id}',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
@@ -45,7 +58,7 @@ module.exports = function (server, models) {
         },
         {
             method: 'PUT',
-            path: '/system/tasks/{task_id}',
+            path: '/systemtasks/v2/tasks/{task_id}',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
@@ -58,7 +71,7 @@ module.exports = function (server, models) {
         },
         {
             method: 'DELETE',
-            path: '/system/tasks/{task_id}',
+            path: '/systemtasks/v2/tasks/{task_id}',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
@@ -71,7 +84,7 @@ module.exports = function (server, models) {
         },
         {
             method: 'GET',
-            path: '/system/tasks/initredisall',
+            path: '/systemtasks/v2/tasks/initredisall',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
@@ -84,7 +97,7 @@ module.exports = function (server, models) {
         },
         {
             method: 'GET',
-            path: '/system/tasks/clearredisall',
+            path: '/systemtasks/v2/tasks/clearredisall',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
@@ -97,7 +110,7 @@ module.exports = function (server, models) {
         },
         {
             method: 'GET',
-            path: '/system/tasks/startall',
+            path: '/systemtasks/v2/tasks/startall',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
@@ -110,7 +123,7 @@ module.exports = function (server, models) {
         },
         {
             method: 'GET',
-            path: '/system/tasks/stopall',
+            path: '/systemtasks/v2/tasks/stopall',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],
@@ -123,7 +136,7 @@ module.exports = function (server, models) {
         },
         {
             method: 'GET',
-            path: '/system/tasks/sync_taskprocess',
+            path: '/systemtasks/v2/tasks/sync_taskprocess',
             config: {
                 auth: 'jwt',
                 tags: ['api', 'system-task'],

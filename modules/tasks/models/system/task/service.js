@@ -3,9 +3,14 @@ var moment = require("moment");
 var Boom = require('boom');
 var Service = function (db) {
     this.db = db;
-    this.attributes = ['task_id', 'name', 'type', 'method', 'path', 'params', 'process_number', 'parallel_number', 'run_limit', 'valid', 'status', 'start_time', 'end_time', 'cron', 'description', 'created_at', 'updated_at'];
+    this.attributes = ['task_id', 'name', 'type', 'method', 'path', 'params', 'process_number', 'parallel_number', 'run_limit', 'valid', 'status', 'start_time', 'end_time', 'cron', 'description', 'created_at', 'updated_at',
+        [this.db.sequelize.literal(`(select count(stp.task_process_id) from system_task_processs stp where stp.task_id = \`SystemTask\`.task_id )`), 'curr_process_count'],//当前任务运行进程数量 
+        [this.db.sequelize.literal(`(select sum(stp.queue_length) from system_task_processs stp where stp.task_id = \`SystemTask\`.task_id )`), 'queue_length'],//当前任务待运行队列数
+        [this.db.sequelize.literal(`(select count(stl.task_log_id) from system_task_logs stl where stl.task_id = \`SystemTask\`.task_id and stl.content like '%运行日志%' )`), 'run_log_count'],//运行日志数 
+        [this.db.sequelize.literal(`(select count(stl.task_log_id) from system_task_logs stl where stl.task_id = \`SystemTask\`.task_id and stl.content like '%启停日志%' )`), 'startcancel_log_count'],//启停日志数
+    ];
 
-    this.include = [{
+    this.include = [/* {
         //任务日志
         model: this.db.SystemTaskLog,
         as: "logs",
@@ -15,7 +20,7 @@ var Service = function (db) {
         model: this.db.SystemTaskProcess,
         as: "processs",
         required: false
-    }]
+    } */]
 
     //初始化任务
     this.TaskMgr = require("../../../libs/TaskMgr")(db);
@@ -40,6 +45,30 @@ Service.prototype.list = function (where, page_size, page_number, orderArr) {
     }
 
     return self.db.SystemTask.findAndCountAll(options)
+};
+//普通列表
+Service.prototype.loglist = function (where, page_size, page_number, orderArr) {
+    let self = this;
+
+    var options = {
+        distinct: true,
+        include: [{
+            //任务对象
+            model: this.db.SystemTask,
+            as: "task",
+            required: true
+        }],
+        where: where,
+        order: orderArr
+    };
+
+    //如果分页参数中有一个等于0, 则获取全部数据
+    if (page_size > 0 && page_number > 0) {
+        options.limit = page_size;
+        options.offset = page_size * (page_number - 1);
+    }
+
+    return self.db.SystemTaskLog.findAndCountAll(options)
 };
 //获取单项
 Service.prototype.get = function (where) {
@@ -90,7 +119,7 @@ Service.prototype.update = async function (where, data) {
     var self = this;
 
     // 先清除单项任务Redis
-    await self.TaskMgr.clearRedisSingle(item.task_id);
+    await self.TaskMgr.clearRedisSingle(where.task_id);
     // 先取消并删除
     await self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.CANCELSINGLE, where.task_id);
 

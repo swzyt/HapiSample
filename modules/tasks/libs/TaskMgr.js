@@ -106,8 +106,10 @@ module.exports = function (db) {
             await self.db.cache.client.rpushAsync(redis_task_key, ...Array.from({ length: self.getRunCount(item.process_number) }, (item, index) => { return item_str }));
 
             // 设置任务可运行次数
-            let redis_run_limit_key = `${RedisRunLimitKeyPrefix}:${item.task_id}`;
-            await self.db.cache.client.rpushAsync(redis_run_limit_key, ...Array.from({ length: item.run_limit }, (item, index) => { return redis_run_limit_key }));
+            if (item.run_limit) {
+                let redis_run_limit_key = `${RedisRunLimitKeyPrefix}:${item.task_id}`;
+                await self.db.cache.client.rpushAsync(redis_run_limit_key, ...Array.from({ length: item.run_limit }, (item, index) => { return redis_run_limit_key }));
+            }
         },
 
         /**清除Redis All 任务列表、运行次数限制 */
@@ -265,7 +267,6 @@ module.exports = function (db) {
                 item.cron &&
                 item.parallel_number &&
                 item.process_number &&
-                item.run_limit &&
                 (!item.start_time || moment().isAfter(moment(item.start_time))) &&
                 (!item.end_time || moment().isBefore(moment(item.end_time)))
 

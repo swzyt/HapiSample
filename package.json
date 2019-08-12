@@ -39,6 +39,7 @@
     "guid": "0.0.12",
     "hapi": "^18.1.0",
     "hapi-auth-jwt2": "^8.6.1",
+    "hapi-oauth2-server-plugin": "^0.4.0",
     "hapi-swagger": "^9.4.2",
     "images-downloader": "^1.0.3",
     "inert": "^5.1.3",

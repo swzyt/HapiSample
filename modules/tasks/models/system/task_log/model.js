@@ -39,7 +39,7 @@ module.exports = function (sequelize, DataTypes) {
       classMethods: {
         associate: function (models) {
           SystemTaskLog.belongsTo(models.SystemTask, {
-            as: "logs",
+            as: "task",
             foreignKey: 'task_id'
           });
         }

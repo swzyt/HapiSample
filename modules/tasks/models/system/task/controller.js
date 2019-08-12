@@ -15,6 +15,9 @@ Controller.prototype.list = function (request, h) {
     if (request.query.description) {
         where.description = { $like: `%${request.query.description}%` }
     }
+    if (request.query.keyword) {
+        where.name = { $like: '%' + request.query.keyword + '%' };
+    }
     //数组in查询
     if (request.query.valid) {
         where.valid = {
@@ -36,10 +39,25 @@ Controller.prototype.list = function (request, h) {
         order.push(request.query.sorter.split("|"))
     }
     else {
-        order.push(['created_at', 'desc'])
+        order.push([['valid', 'desc'], ['status', 'desc'], ['updated_at', 'desc']])
     }
 
     return this.service.list(where, request.query.page_size, request.query.page_number, order).then(function (list) {
+        return h.success({ total: list.count, items: list.rows });
+    }).catch(function (err) {
+        return h.error(Boom.badRequest(err.message, err));
+    })
+};
+//普通列表
+Controller.prototype.loglist = function (request, h) {
+    var where = {};
+    var order = [['updated_at', 'desc']];
+
+    if (request.query.keyword) {
+        where['$task.name$'] = { $like: '%' + request.query.keyword + '%' };
+    }
+
+    return this.service.loglist(where, request.query.page_size, request.query.page_number, order).then(function (list) {
         return h.success({ total: list.count, items: list.rows });
     }).catch(function (err) {
         return h.error(Boom.badRequest(err.message, err));
