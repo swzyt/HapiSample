@@ -1,6 +1,5 @@
 const nconf = require('nconf');
 const os = require('os');
-const path = require('path');
 
 nconf.argv().env();
 
@@ -14,7 +13,7 @@ var config = require('./config/' + app_env + '.js');
 //默认主配置
 config.server = config.modules.main;
 
-let module_path = path.resolve(__dirname);
+let module_path = __dirname;
 
 //windows系统路径使用\，linux用的是/
 let split_char = os.type().startsWith("Windows") ? "\\" : "/";

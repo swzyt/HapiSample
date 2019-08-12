@@ -40,7 +40,6 @@ module.exports = function (settings) {
                         })
                         .forEach(function (modelFilename) {
                             var modelPath = path.join(
-                                // '..',
                                 module_folder,
                                 moduleDirectory,
                                 modelFilename

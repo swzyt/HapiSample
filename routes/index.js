@@ -3,7 +3,7 @@ var path = require('path');
 
 module.exports = function (server, models, oauth, db) {
 
-    const ROUTES_FOLDER = path.resolve(__dirname);
+    const ROUTES_FOLDER = __dirname;
 
     fs
         .readdirSync(ROUTES_FOLDER)
@@ -20,7 +20,6 @@ module.exports = function (server, models, oauth, db) {
                 })
                 .forEach(function (routes_file) {
                     var routes_file = path.join(
-                        // '..',
                         module_folder,
                         routes_file
                     );
