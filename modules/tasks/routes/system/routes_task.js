@@ -21,7 +21,7 @@ module.exports = function (server, models) {
             method: 'GET',
             path: '/systemtasks/v2/tasks/loglist',
             config: {
-                auth: 'default',
+                auth: 'jwt',
                 tags: ['api', 'system-task'],
                 description: '分页方式获取任务日志列表信息',
                 validate: models.system.task.validator.loglist.request,

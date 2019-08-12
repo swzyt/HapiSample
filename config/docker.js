@@ -97,6 +97,7 @@ module.exports = {
     //redis配置
     "redis": {
         "host": "local-redis",
+        "password": "123456",
         "port": 6379
     },
     //mongodb配置

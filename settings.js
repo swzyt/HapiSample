@@ -1,5 +1,7 @@
 "use strict";
 const nconf = require('nconf');
+const os = require('os');
+const path = require('path');
 
 nconf.argv().env();
 
@@ -13,17 +15,25 @@ var config = require('./config/' + app_env + '.js');
 //默认主配置
 config.server = config.modules.main;
 
-let module_path = process.cwd();
-let module_name = module_path.split('\\')[module_path.split('\\').length - 1]
+let module_path = path.resolve(__dirname);
+
+console.log('********************************')
+console.log(module_path)
+console.log(process.cwd())
+console.log('********************************')
+
+//windows系统路径使用\，linux用的是/
+let split_char = os.type().startsWith("Windows") ? "\\" : "/";
+
+let module_name = module_path.split(split_char)[module_path.split(split_char).length - 1];
+
 //读取module配置
 if (config.modules[module_name]) {
     config.server = config.modules[module_name];
 }
 
-// config.server.port = process.env.PORT || config.server.port;
-
 console.log("****************************************配置项****************************************")
-console.log(`当前运行环境: ${app_env}`);
+console.log(`当前运行环境: ${app_env}-${module_name}`);
 console.log(`配置项: ${JSON.stringify(config)}`);
 console.log("****************************************配置项****************************************")
 

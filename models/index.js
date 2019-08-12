@@ -3,7 +3,7 @@ var path = require('path');
 
 module.exports = function (db) {
 
-    const MODELS_FOLDER = path.resolve(process.cwd(), './models');
+    const MODELS_FOLDER = path.resolve(__dirname);
 
     var result = {};
 

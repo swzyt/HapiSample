@@ -10,7 +10,7 @@ services:
       networks:
         - local-redis-ms-network
       # 设置持久化
-      command: redis-server --appendonly yes
+      command: redis-server --appendonly yes --requirepass 123456
       environment: #environment 和 Dockerfile 中的 ENV 指令一样会把变量一直保存在镜像、容器中，类似 docker run -e 的效果。设置容器的环境变量
         - TZ=Asia/Shanghai
       restart: always

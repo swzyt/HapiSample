@@ -8,8 +8,8 @@ var bluebird = require("bluebird");
 bluebird.promisifyAll(redis.RedisClient.prototype);
 bluebird.promisifyAll(redis.Multi.prototype);
 
-var client = redis.createClient(settings.redis.port, settings.redis.host);
-//var client = asyncRedis.decorate(redis.createClient(settings.redis.port, settings.redis.host));
+var client = redis.createClient(settings.redis);
+//var client = asyncRedis.decorate(redis.createClient(settings.redis));
 client.on("error", function (err) {
     console.log("Redis Error " + err);
 });

@@ -3,7 +3,7 @@ var path = require('path');
 
 module.exports = function (server, models, oauth, db) {
 
-    const ROUTES_FOLDER = path.resolve(process.cwd(), './routes');
+    const ROUTES_FOLDER = path.resolve(__dirname);
 
     fs
         .readdirSync(ROUTES_FOLDER)

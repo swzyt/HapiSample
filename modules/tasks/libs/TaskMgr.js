@@ -22,8 +22,8 @@ const RedisRunLimitKeyPrefix = 'LOCAL-TASK-RUN-LIMIT';
 module.exports = function (db) {
 
     //redis 发布/订阅 客户端
-    let pub = db.cache.redis.createClient(db.cache.settings.redis.port, db.cache.settings.redis.host),
-        sub = db.cache.redis.createClient(db.cache.settings.redis.port, db.cache.settings.redis.host);
+    let pub = db.cache.redis.createClient(db.cache.settings.redis),
+        sub = db.cache.redis.createClient(db.cache.settings.redis);
 
     var TaskMgr = {
 
