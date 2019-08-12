@@ -1,5 +1,5 @@
 var redis = require("redis");
-var settings = require("../settings")
+var settings = require("../settings");
 
 const asyncRedis = require("async-redis");
 

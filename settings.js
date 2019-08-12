@@ -1,4 +1,3 @@
-"use strict";
 const nconf = require('nconf');
 const os = require('os');
 const path = require('path');
@@ -16,11 +15,6 @@ var config = require('./config/' + app_env + '.js');
 config.server = config.modules.main;
 
 let module_path = path.resolve(__dirname);
-
-console.log('********************************')
-console.log(module_path)
-console.log(process.cwd())
-console.log('********************************')
 
 //windows系统路径使用\，linux用的是/
 let split_char = os.type().startsWith("Windows") ? "\\" : "/";
