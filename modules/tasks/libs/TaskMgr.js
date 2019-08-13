@@ -80,11 +80,13 @@ class TaskMgr {
         /**redis 订阅 客户端 */
         this.sub = db.cache.redis.createClient(db.cache.settings.redis);
 
-        // 初始化Redis
-        this.initRedis();
+        // 初始化Redis Events
+        this.initRedisEvents();
 
         this.initFirstProcess();
     }
+
+    //======================Redis 初始化、清除方法，连接事件、订阅事件监控======================
 
     /**初始化Redis All */
     async initRedisAll() {
@@ -120,7 +122,7 @@ class TaskMgr {
         // 支持任务多进程运行
         // 追加到队列尾部
         let redis_task_key = `${RedisTaskListKeyPrefix}:${item.task_id}`;
-        await self.db.cache.client.rpushAsync(redis_task_key, ...Array.from({ length: await self.getRunCount(item.process_number) }, (item, index) => { return item_str }));
+        await self.db.cache.client.rpushAsync(redis_task_key, ...Array.from({ length: await self.getRunProcessCount(item.process_number) }, (item, index) => { return item_str }));
 
         // 设置任务可运行次数
         if (item.run_limit) {
@@ -164,41 +166,8 @@ class TaskMgr {
         return await this.db.cache.client.delAsync(key);
     }
 
-    /**监控第一个启动的进程，由它延时启动全部任务 */
-    async initFirstProcess() {
-        let self = this;
-
-        let redis_value = `${_getHostName()}:${process.pid}`
-        await self.db.cache.client.rpushAsync(RedisTaskHostProcess, redis_value);
-
-        let first_item = await self.db.cache.client.lindexAsync(RedisTaskHostProcess, 0);
-
-        // 判断当前进程是否为第一个运行的进程，若是，则执行定时操作
-        if (first_item == redis_value) {
-            console.log(`The First Process Running! ${redis_value}`)
-
-            // 定时器，触发启动全部任务
-            setTimeout(async function () {
-
-                await self.db.cache.client.setAsync(RedisTaskProcessCount, await self.db.cache.client.llenAsync(RedisTaskHostProcess))
-
-                await self.delRedis(RedisTaskHostProcess);
-
-                await self.initRedisAll();
-
-                await self.startAll();
-
-            }, TimeOut_StartAll);
-
-            //循环任务，每N秒同步任务进程表
-            setInterval(async function () {
-                self.syncTaskProcess();
-            }, Interval_SyncTaskProcess)
-        }
-    }
-
-    /**初始化Redis*/
-    initRedis() {
+    /**初始化Redis Events*/
+    initRedisEvents() {
         let self = this;
 
         //#region 普通订阅
@@ -301,9 +270,45 @@ class TaskMgr {
         return await this.pub.publishAsync(channel, data);
     }
 
+    //======================首个进程事件处理======================
+
+    /**监控第一个启动的进程，由它延时启动全部任务、同步任务进程表 */
+    async initFirstProcess() {
+        let self = this;
+
+        let redis_value = `${_getHostName()}:${process.pid}`
+        await self.db.cache.client.rpushAsync(RedisTaskHostProcess, redis_value);
+
+        let first_item = await self.db.cache.client.lindexAsync(RedisTaskHostProcess, 0);
+
+        // 判断当前进程是否为第一个运行的进程，若是，则执行定时操作
+        if (first_item == redis_value) {
+            console.log(`The First Process Running! ${redis_value}`)
+
+            // 定时器，触发启动全部任务
+            setTimeout(async function () {
+
+                await self.db.cache.client.setAsync(RedisTaskProcessCount, await self.db.cache.client.llenAsync(RedisTaskHostProcess))
+
+                await self.delRedis(RedisTaskHostProcess);
+
+                await self.initRedisAll();
+
+                await self.startAll();
+
+            }, TimeOut_StartAll);
+
+            //循环任务，每N秒同步任务进程表
+            setInterval(async function () {
+                self.syncTaskProcess();
+            }, Interval_SyncTaskProcess)
+        }
+    }
+
+    //======================从Redis获取当前部署的任务平台进程数======================
 
     /**获取任务运行最大进程数 */
-    async getRunCount(number) {
+    async getRunProcessCount(number) {
         let self = this;
 
         let maxProcessCount = parseInt((await self.db.cache.client.getAsync(RedisTaskProcessCount)) || 1);
@@ -311,6 +316,8 @@ class TaskMgr {
         number = number || 1;
         return number > maxProcessCount ? maxProcessCount : number;
     }
+
+    //======================任务有效性检测======================
 
     /**检测任务在当前进程是否存在 */
     checkTaskList(task_id) {
@@ -337,6 +344,8 @@ class TaskMgr {
 
         return result;
     }
+
+    //======================任务启动与停止======================
 
     /**发布启动全部任务消息 */
     async startAll() {
@@ -549,6 +558,8 @@ class TaskMgr {
         return null;
     }
 
+    //======================日志======================
+
     /**实例化日志对象 */
     getLogItem(task_id) {
         let job = this.task_list[task_id] ? this.task_list[task_id].job : null;
@@ -586,6 +597,8 @@ class TaskMgr {
         return self.db.SystemTaskLog.build(log_item).save()
     }
 
+    //======================同步进程======================
+
     /**发布同步任务进程表消息 */
     async syncTaskProcess() {
         let self = this;
@@ -616,4 +629,4 @@ class TaskMgr {
     }
 }
 
-module.exports = TaskMgr
+module.exports = TaskMgr;
