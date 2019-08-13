@@ -7,6 +7,11 @@ module.exports = function (sequelize, DataTypes) {
       primaryKey: true,
       comment: "任务进程id"
     },
+    host: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      comment: "主机名"
+    },
     process_id: {
       type: DataTypes.INTEGER(11),
       allowNull: false,

@@ -6,8 +6,8 @@ var Service = function (db) {
     this.attributes = ['task_id', 'name', 'type', 'method', 'path', 'params', 'process_number', 'parallel_number', 'run_limit', 'valid', 'status', 'start_time', 'end_time', 'cron', 'description', 'created_at', 'updated_at',
         [this.db.sequelize.literal(`(select count(stp.task_process_id) from system_task_processs stp where stp.task_id = \`SystemTask\`.task_id )`), 'curr_process_count'],//当前任务运行进程数量 
         [this.db.sequelize.literal(`(select sum(stp.queue_length) from system_task_processs stp where stp.task_id = \`SystemTask\`.task_id )`), 'queue_length'],//当前任务待运行队列数
-        [this.db.sequelize.literal(`(select count(stl.task_log_id) from system_task_logs stl where stl.task_id = \`SystemTask\`.task_id and stl.content like '%运行日志%' )`), 'run_log_count'],//运行日志数 
-        [this.db.sequelize.literal(`(select count(stl.task_log_id) from system_task_logs stl where stl.task_id = \`SystemTask\`.task_id and stl.content like '%启停日志%' )`), 'startcancel_log_count'],//启停日志数
+        [this.db.sequelize.literal(`(select count(stl.task_log_id) from system_task_logs stl where stl.task_id = \`SystemTask\`.task_id and stl.log_type = 'RUN' )`), 'run_log_count'],//运行日志数 
+        [this.db.sequelize.literal(`(select count(stl.task_log_id) from system_task_logs stl where stl.task_id = \`SystemTask\`.task_id and stl.log_type = 'START_CANCEL' )`), 'startcancel_log_count'],//启停日志数
     ];
 
     this.include = [/* {

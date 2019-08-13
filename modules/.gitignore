@@ -16,6 +16,7 @@ tasks/routes/index.js
 
 !tasks/cron/
 !tasks/libs/
+!tasks/libs/IP.js
 !tasks/libs/restler.js
 !tasks/libs/TaskMgr.js
 !tasks/models/

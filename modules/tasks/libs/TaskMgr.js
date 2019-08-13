@@ -5,19 +5,26 @@ const _ = require('lodash');
 const moment = require("moment");
 const restler = require("./restler");
 const Bagpipe = require('bagpipe');
-const cluster = require('cluster');
 
-/**
- * 最大进程数
- * 根据 PM2 运行本项目的进程数设置
- */
-const MaxProcessCount = cluster.worker ? cluster.worker.process.env.instances : 1;
+/**获取主机名 */
+function getHostName() {
+    return require("os").hostname();
+}
+
+/**Redis 任务平台主机进程记录 KEY */
+const RedisTaskHostProcess = "LOCAL-TASK-HOST-PROCESS";
+
+/**Redis 任务平台主机进程数 KEY */
+const RedisTaskProcessCount = "LOCAL-TASK-PROCESS-COUNT";
 
 /**Redis KEY 前缀 */
 const RedisTaskListKeyPrefix = 'LOCAL-TASK-LIST';
 
 /**Redis Run Limit KEY 前缀 */
 const RedisRunLimitKeyPrefix = 'LOCAL-TASK-RUN-LIMIT';
+
+/**默认一分钟后，启动全部任务 */
+const TimeOut_StartAll = 1000 * 15;
 
 module.exports = function (db) {
 
@@ -33,7 +40,6 @@ module.exports = function (db) {
         /**运行中的任务列表 */
         task_list: {
         },
-
 
         //#region 常量定义 · 开始
 
@@ -103,7 +109,7 @@ module.exports = function (db) {
             // 支持任务多进程运行
             // 追加到队列尾部
             let redis_task_key = `${RedisTaskListKeyPrefix}:${item.task_id}`;
-            await self.db.cache.client.rpushAsync(redis_task_key, ...Array.from({ length: self.getRunCount(item.process_number) }, (item, index) => { return item_str }));
+            await self.db.cache.client.rpushAsync(redis_task_key, ...Array.from({ length: await self.getRunCount(item.process_number) }, (item, index) => { return item_str }));
 
             // 设置任务可运行次数
             if (item.run_limit) {
@@ -144,6 +150,32 @@ module.exports = function (db) {
         /**删除Redis KEY */
         async delRedis(key) {
             return await this.db.cache.client.delAsync(key);
+        },
+
+        /**监控第一个启动的进程，由它延时启动全部任务 */
+        async initProcessStart() {
+            let self = this;
+            let redis_value = `${getHostName()}:${process.pid}`
+            await db.cache.client.rpushAsync(RedisTaskHostProcess, redis_value);
+
+            let first_item = await db.cache.client.lindexAsync(RedisTaskHostProcess, 0);
+            if (first_item == redis_value) {
+                console.log("The First Process!")
+
+                //定时器，触发启动全部任务
+                setTimeout(async function () {
+                    console.log("定时器执行了")
+
+                    await self.db.cache.client.setAsync(RedisTaskProcessCount, await db.cache.client.llenAsync(RedisTaskHostProcess))
+
+                    await self.delRedis(RedisTaskHostProcess);
+
+                    await self.initRedisAll();
+
+                    await self.startAll();
+
+                }, TimeOut_StartAll);
+            }
         },
 
         /**初始化Redis SubScribe*/
@@ -244,9 +276,13 @@ module.exports = function (db) {
         //#region 任务检测 · 开始
 
         /**获取任务运行最大进程数 */
-        getRunCount: function (number) {
+        getRunCount: async function (number) {
+            let self = this;
+
+            let maxProcessCount = parseInt((await self.db.cache.client.getAsync(RedisTaskProcessCount)) || 1);
+
             number = number || 1;
-            return number > MaxProcessCount ? MaxProcessCount : number;
+            return number > maxProcessCount ? maxProcessCount : number;
         },
 
         /**检测任务在当前进程是否存在 */
@@ -390,7 +426,7 @@ module.exports = function (db) {
                                     }
                                     //远程任务
                                     else if (item.type == "remote") {
-                                        task_log.content = JSON.stringify(await restler[item.method](item.path, JSON.parse(item.params)));
+                                        task_log.content = JSON.stringify(await restler[item.method](item.path, item.params ? JSON.parse(item.params) : null));
                                     }
                                 }
                                 catch (err) {
@@ -401,9 +437,6 @@ module.exports = function (db) {
                                         stack: err.stack
                                     })
                                 }
-
-
-                                task_log.content = `日志类型：运行日志\n日志内容：${task_log.content || ''}`;
 
                                 task_log.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
 
@@ -470,6 +503,9 @@ module.exports = function (db) {
                 }
                 delete this.task_list[task_id]
 
+                //删除进程记录
+                await this.db.SystemTaskProcess.destroy({ where: { process_id: process.pid } })
+
                 //取消日志
                 return await this.saveNormalLog(task_id, this.TaskLogType.CANCELLOG);
             }
@@ -505,7 +541,11 @@ module.exports = function (db) {
             return {
                 task_id,
                 start_time: moment().format("YYYY-MM-DD HH:mm:ss"),
-                next_time: job && job.nextInvocation() ? moment(job.nextInvocation().getTime()).format("YYYY-MM-DD HH:mm:ss") : null
+                next_time: job && job.nextInvocation() ? moment(job.nextInvocation().getTime()).format("YYYY-MM-DD HH:mm:ss") : null,
+                log_type: 'RUN',
+
+                host: getHostName(),
+                process_id: process.pid
             }
         },
 
@@ -515,7 +555,9 @@ module.exports = function (db) {
 
             log_item.end_time = moment().format("YYYY-MM-DD HH:mm:ss");
 
-            log_item.content = `日志类型：启停日志\n日志内容：${content}`;
+            log_item.log_type = 'START_CANCEL';
+
+            log_item.content = content;
 
             return this.saveLog(log_item);
         },
@@ -524,7 +566,7 @@ module.exports = function (db) {
         saveLog: function (log_item) {
             let self = this;
             log_item.content = log_item.content || "";
-            log_item.process_id = process.pid;
+
             return self.db.SystemTaskLog.build(log_item).save()
         },
 
@@ -541,6 +583,7 @@ module.exports = function (db) {
                 let queue_length = self.task_list[task_id] && self.task_list[task_id].queue ? self.task_list[task_id].queue.queue.length : 0;
 
                 let options = {
+                    host: getHostName(),
                     process_id: process.pid,
                     task_id: task_id,
                     queue_length: queue_length
@@ -551,9 +594,23 @@ module.exports = function (db) {
         }
     }
 
+    // pub/sub 客户端事件
+    pub.on("ready", function () {
+        console.log("Pub Redis Ready ");
+    });
+    pub.on("error", function (err) {
+        console.log("Pub Redis Error " + err);
+    });
+
     // 初始化Redis SubScribe
     sub.on("ready", function () {
+        console.log("Sub Redis Ready ");
         TaskMgr.initRedisSubScribe();
+
+        TaskMgr.initProcessStart();
+    });
+    sub.on("error", function (err) {
+        console.log("Sub Redis Error " + err);
     });
 
     return TaskMgr;

@@ -126,6 +126,7 @@ module.exports = {
         "no_url": [
             "/favicon",
             "/swagger",
+            "/docs",
             "/documentation"
         ],
         //日志记录数据库

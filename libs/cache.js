@@ -10,6 +10,9 @@ bluebird.promisifyAll(redis.Multi.prototype);
 
 var client = redis.createClient(settings.redis);
 //var client = asyncRedis.decorate(redis.createClient(settings.redis));
+client.on("ready", function () {
+    console.log("Redis Ready ");
+});
 client.on("error", function (err) {
     console.log("Redis Error " + err);
 });

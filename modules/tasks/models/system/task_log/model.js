@@ -22,10 +22,20 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: true,
       comment: "下次执行时间"
     },
+    log_type: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      comment: "日志类型 START_CANCEL(启停日志)/RUN(运行日志)"
+    },
     content: {
       type: DataTypes.TEXT({ length: 'medium' }),
       allowNull: false,
       comment: "日志内容"
+    },
+    host: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      comment: "主机名"
     },
     process_id: {
       type: DataTypes.INTEGER(11),
