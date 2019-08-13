@@ -298,9 +298,11 @@ class TaskMgr {
 
             }, TimeOut_StartAll);
 
-            //循环任务，每N秒同步任务进程表
+            //循环任务，每N秒检测任务进程合理性，并同步任务进程表
             setInterval(async function () {
-                self.syncTaskProcess();
+                await self.checkTaskProcess();
+
+                await self.syncTaskProcess();
             }, Interval_SyncTaskProcess)
         }
     }
@@ -343,6 +345,34 @@ class TaskMgr {
         console.log(`任务 ${item.task_id} 在当前主机 ${_getHostName()} 的进程 ${process.pid} 中 ${result ? '可运行' : '不可运行'}`)
 
         return result;
+    }
+
+    /**检测任务运行进程数是否合理，否则重新运行 */
+    async checkTaskProcess() {
+        let self = this;
+
+        let options = {
+            distinct: true,
+            include: [{
+                //任务进程
+                model: self.db.SystemTaskProcess,
+                as: "processs",
+                required: false
+            }],
+            where: { valid: true, status: 'running' }
+        };
+        let tasks = await self.db.SystemTask.findAll(options)
+
+        if (tasks && tasks.length > 0) {
+            for (let i = 0; i < tasks.length; i++) {
+                //判断任务当前进程数是否大于配置值，若是，则取消后重新运行
+                if (tasks[i].processs.length > tasks[i].process_number) {
+                    await self.Cancel(tasks[i].task_id);
+
+                    await self.createTask(tasks[i]);
+                }
+            }
+        }
     }
 
     //======================任务启动与停止======================
