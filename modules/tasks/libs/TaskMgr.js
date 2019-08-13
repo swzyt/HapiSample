@@ -24,8 +24,6 @@ const RedisRunLimitKeyPrefix = 'LOCAL-TASK-RUN-LIMIT';
 const RedisChannelKey = {
     /**停止全部*/
     STOPALL: `${RedisTaskListKeyPrefix}-StopAll`,
-    /**重启单任务*/
-    RESTARTSINGLE: `${RedisTaskListKeyPrefix}-ReStartSingle`,
     /**取消单任务*/
     CANCELSINGLE: `${RedisTaskListKeyPrefix}-CancelSingle`,
     /**同步任务进程表*/
@@ -46,9 +44,7 @@ const TaskLogType = {
     /**启动任务 */
     STARTLOG: '启动任务',
     /**取消任务 */
-    CANCELLOG: '取消任务',
-    /**取消最近一次的执行任务 */
-    CANCELNEXTLOG: '取消最近一次的执行任务'
+    CANCELLOG: '取消任务'
 };
 
 

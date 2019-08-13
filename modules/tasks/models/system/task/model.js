@@ -20,7 +20,7 @@ module.exports = function (sequelize, DataTypes) {
     method: {
       type: DataTypes.STRING(100),
       allowNull: true,
-      comment: "远程任务调用。get/post/delete/put"
+      comment: "远程任务可用。get/post/delete/put"
     },
     path: {
       type: DataTypes.STRING(1000),
