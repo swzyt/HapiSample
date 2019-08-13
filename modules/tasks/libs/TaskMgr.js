@@ -655,4 +655,6 @@ class TaskMgr {
     }
 }
 
-module.exports = TaskMgr;
+module.exports = function (db) {
+    return new TaskMgr(db);
+};

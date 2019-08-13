@@ -24,8 +24,7 @@ var Service = function (db) {
     } */]
 
     //初始化任务管理模块
-    let TaskMgr = require("../../../libs/TaskMgr");
-    this.TaskMgr = new TaskMgr(db);
+    this.TaskMgr = require("../../../libs/TaskMgr")(db);
 };
 
 //普通列表
