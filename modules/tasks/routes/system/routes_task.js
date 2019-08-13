@@ -34,7 +34,7 @@ module.exports = function (server, models) {
             method: 'POST',
             path: '/systemtasks/v2/tasks',
             config: {
-                auth: false,
+                auth: 'jwt',
                 tags: ['api', 'system-task'],
                 description: '创建新的任务信息',
                 validate: models.system.task.validator.create.request,
@@ -133,19 +133,6 @@ module.exports = function (server, models) {
                 // response: models.system.task.validator.stopAll.response,
                 handler: models.system.task.controller.stopAll
             }
-        },
-        {
-            method: 'GET',
-            path: '/systemtasks/v2/tasks/sync_taskprocess',
-            config: {
-                auth: 'jwt',
-                tags: ['api', 'system-task'],
-                description: '同步任务进程表',
-                // validate: models.system.task.validator.syncTaskProcess.request,
-                notes: '同步任务进程表',
-                // response: models.system.task.validator.syncTaskProcess.response,
-                handler: models.system.task.controller.syncTaskProcess
-            }
-        },
+        },        
     ])
 };

@@ -22,8 +22,9 @@ var Service = function (db) {
         required: false
     } */]
 
-    //初始化任务
-    this.TaskMgr = require("../../../libs/TaskMgr")(db);
+    //初始化任务管理模块
+    let TaskMgr = require("../../../libs/TaskMgr");
+    this.TaskMgr = new TaskMgr(db);
 };
 
 //普通列表
@@ -89,7 +90,7 @@ Service.prototype.create = function (data) {
     return self.db.SystemTask.build(data).save().then((item) => {
 
         // 启动任务
-        self.TaskMgr.startSingle(item);
+        self.TaskMgr.createTask(item);
 
         return item;
     })
@@ -101,11 +102,7 @@ Service.prototype.delete = function (where) {
     return self.db.SystemTask.findOne({ where: where }).then(async function (item) {
         if (item) {
 
-            // 先清除单项任务Redis
-            await self.TaskMgr.clearRedisSingle(item.task_id);
-
-            // 取消并删除
-            await self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.CANCELSINGLE, item.task_id);
+            await self.TaskMgr.Cancel(item.task_id);
 
             return item.destroy();
         }
@@ -118,16 +115,13 @@ Service.prototype.update = async function (where, data) {
 
     var self = this;
 
-    // 先清除单项任务Redis
-    await self.TaskMgr.clearRedisSingle(where.task_id);
-    // 先取消并删除
-    await self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.CANCELSINGLE, where.task_id);
+    await self.TaskMgr.Cancel(where.task_id);
 
     return self.db.SystemTask.update(data, { where: where }).then(result => {
 
         self.get(where).then(item => {
             // 重启任务
-            self.TaskMgr.startSingle(item);
+            self.TaskMgr.createTask(item);
         })
 
         return result;
@@ -162,20 +156,7 @@ Service.prototype.stopAll = async function () {
 
     var self = this;
 
-    //清除Redis
-    await self.TaskMgr.clearRedisAll();
-
-    return await self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.STOPALL);
-};
-
-Service.prototype.syncTaskProcess = async function () {
-
-    var self = this;
-
-    //删除所有进程记录
-    await self.db.SystemTaskProcess.destroy({ where: { process_id: { $gt: 0 } } })
-
-    return await self.TaskMgr.pubRedisChannel(self.TaskMgr.RedisChannelKey.SYNCTASKPROCESS);
+    return await self.TaskMgr.stopAll();
 };
 
 

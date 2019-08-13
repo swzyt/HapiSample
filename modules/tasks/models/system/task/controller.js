@@ -152,13 +152,4 @@ Controller.prototype.stopAll = function (request, h) {
     })
 };
 
-Controller.prototype.syncTaskProcess = function (request, h) {
-    return this.service.syncTaskProcess().then(function (result) {
-        return h.success(result);
-
-    }).catch(function (err) {
-        return h.error(Boom.badRequest(err.message, err));
-    })
-};
-
 module.exports = Controller;
