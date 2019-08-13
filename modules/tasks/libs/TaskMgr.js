@@ -480,7 +480,7 @@ class TaskMgr {
                             let task_log = self.getLogItem(item.task_id);
 
                             try {
-                                // let fun = require("D:/WorkSpace/Framework/HapiSimple/tasks/index.js")
+                                // let fun = require("D:/WorkSpace/Framework/HapiSample/tasks/index.js")
                                 //本地任务
                                 if (item.type == "local") {
                                     let fun = require(item.path);

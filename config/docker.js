@@ -7,19 +7,18 @@ module.exports = {
     "modules": {
         main: {
             "host": "localhost",
-            "port": 8888,
+            "port": 8880,
             swagger: {
                 info: {
-                    title: 'HapiSimple Main 接口文档',
+                    title: 'HapiSample Main 接口文档',
                     version: "1.0.0",
-                    description: 'HapiSimple Main 接口文档',
+                    description: 'HapiSample Main 接口文档',
                     contact: {
                         name: 'swzyt',
                         email: 'suwei.me@qq.com'
                     }
                 },
                 tags: [
-                    { "name": "storage", "description": "文件服务" },
                     { "name": "system-app", "description": "系统-app" },
                     { "name": "system-menu", "description": "系统-菜单" },
                     { "name": "system-button", "description": "系统-按钮" },
@@ -30,12 +29,12 @@ module.exports = {
         },
         auth: {
             "host": "localhost",
-            "port": 8887,
+            "port": 8881,
             swagger: {
                 info: {
-                    title: 'HapiSimple Auth 接口文档',
+                    title: 'HapiSample Auth 接口文档',
                     version: "1.0.0",
-                    description: 'HapiSimple Auth 接口文档',
+                    description: 'HapiSample Auth 接口文档',
                     contact: {
                         name: 'swzyt',
                         email: 'suwei.me@qq.com'
@@ -46,14 +45,32 @@ module.exports = {
                 ]
             }
         },
-        tasks: {
+        storage: {
             "host": "localhost",
-            "port": 8889,
+            "port": 8882,
             swagger: {
                 info: {
-                    title: 'HapiSimple Tasks 接口文档',
+                    title: 'HapiSample Storage 接口文档',
                     version: "1.0.0",
-                    description: 'HapiSimple Tasks 接口文档',
+                    description: 'HapiSample Storage 接口文档',
+                    contact: {
+                        name: 'swzyt',
+                        email: 'suwei.me@qq.com'
+                    }
+                },
+                tags: [
+                    { "name": "storage", "description": "文件存储服务" },
+                ]
+            }
+        },
+        tasks: {
+            "host": "localhost",
+            "port": 8883,
+            swagger: {
+                info: {
+                    title: 'HapiSample Tasks 接口文档',
+                    version: "1.0.0",
+                    description: 'HapiSample Tasks 接口文档',
                     contact: {
                         name: 'swzyt',
                         email: 'suwei.me@qq.com'
@@ -103,7 +120,7 @@ module.exports = {
     //mongodb配置
     "mongodb": {
         "url": "mongodb://local-mongo:27017",
-        "dbname": "hapiSimple",
+        "dbname": "hapiSample",
         "tableName_api_log": "api_log",
         "tableName_upload_file": "upload_file"
     },

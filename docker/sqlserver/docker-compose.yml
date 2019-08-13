@@ -8,8 +8,8 @@ services:
     ports:
       - 14333:1433
     # volumes:
-    #   - /D/WorkSpace/Framework/HapiSimple/docker/mysql/master/other:/var/lib/mysql
-    #   - /D/WorkSpace/Framework/HapiSimple/docker/mysql/master/config/mysqld.conf:/etc/mysql/mysql.conf.d/mysqld.cnf
+    #   - /D/WorkSpace/Framework/HapiSample/docker/mysql/master/other:/var/lib/mysql
+    #   - /D/WorkSpace/Framework/HapiSample/docker/mysql/master/config/mysqld.conf:/etc/mysql/mysql.conf.d/mysqld.cnf
     environment:
       - ACCEPT_EULA=Y
       - SA_PASSWORD=Suwei123!@#

@@ -7,6 +7,13 @@ auth/routes/index.js
 !auth/install.bat
 !auth/install.bat.backup
 
+#modules storage
+storage/*
+storage/routes/index.js
+
+!storage/routes/
+!storage/install.bat
+
 #modules tasks
 tasks/*
 tasks/libs/*

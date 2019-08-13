@@ -19,6 +19,12 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "module-storage",
+            "program": "${workspaceFolder}\\modules\\storage\\index.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "module-task",
             "program": "${workspaceFolder}\\modules\\tasks\\index.js"
         },

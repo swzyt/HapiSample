@@ -6,7 +6,7 @@ services:
       ports:
         - 6379:6379
       volumes:
-        - /D/WorkSpace/Framework/HapiSimple/docker/redis/data:/data
+        - /D/WorkSpace/Framework/HapiSample/docker/redis/data:/data
       networks:
         - local-redis-ms-network
       # 设置持久化

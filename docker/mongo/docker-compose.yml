@@ -7,7 +7,7 @@ services:
       ports:
         - 27017:27017
       volumes:
-        - /D/WorkSpace/Framework/HapiSimple/docker/mongo/data:/data
+        - /D/WorkSpace/Framework/HapiSample/docker/mongo/data:/data
       networks:
         - local-mongo-ms-network
       environment: #environment 和 Dockerfile 中的 ENV 指令一样会把变量一直保存在镜像、容器中，类似 docker run -e 的效果。设置容器的环境变量

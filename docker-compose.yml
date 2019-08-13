@@ -3,13 +3,13 @@ version: '3'
 
 services:
 
-  hapisimple:
-    container_name: hapisimple
+  hapisample:
+    container_name: hapisample
     # 直接用dockerfile构建
     build: .
     # build 存在时，image为指定构建的镜像名称及tag
     # build 不存在时，image为指定构建容器的镜像名称
-    image: hapisimple:v1
+    image: hapisample:v1
     command: npm run start-docker-linux-mac
     # command: npm run start-cnblogs-V2-docker-linux-mac
     # command: npm run start-cnblogs-V3-docker-linux-mac

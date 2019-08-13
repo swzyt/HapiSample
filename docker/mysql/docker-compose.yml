@@ -8,8 +8,8 @@ services:
     ports:
       - 3306:3306
     volumes:
-      - /D/WorkSpace/Framework/HapiSimple/docker/mysql/master/other:/var/lib/mysql
-      - /D/WorkSpace/Framework/HapiSimple/docker/mysql/master/config/mysqld.conf:/etc/mysql/mysql.conf.d/mysqld.cnf
+      - /D/WorkSpace/Framework/HapiSample/docker/mysql/master/other:/var/lib/mysql
+      - /D/WorkSpace/Framework/HapiSample/docker/mysql/master/config/mysqld.conf:/etc/mysql/mysql.conf.d/mysqld.cnf
     environment:
       MYSQL_ROOT_PASSWORD: "123456"
       MYSQL_DATABASE: Test
@@ -26,8 +26,8 @@ services:
     ports:
       - 33006:3306
     volumes:
-      - /D/WorkSpace/Framework/HapiSimple/docker/mysql/slave/other:/var/lib/mysql
-      - /D/WorkSpace/Framework/HapiSimple/docker/mysql/slave/config/mysqld.conf:/etc/mysql/mysql.conf.d/mysqld.cnf
+      - /D/WorkSpace/Framework/HapiSample/docker/mysql/slave/other:/var/lib/mysql
+      - /D/WorkSpace/Framework/HapiSample/docker/mysql/slave/config/mysqld.conf:/etc/mysql/mysql.conf.d/mysqld.cnf
     environment:
       MYSQL_ROOT_PASSWORD: "123456"
       MYSQL_DATABASE: Test
