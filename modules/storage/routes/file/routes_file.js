@@ -159,7 +159,7 @@ module.exports = function (server, models) {
                         mongodb.downloadFile(settings.mongodb.dbname, file_name, (err, file_attr) => {
                             if (err || !file_attr) return reject(Boom.badRequest("获取文件失败"));
 
-                            let file_path = path.join(__dirname, "../../static/mongo_file/" + file_name)
+                            let file_path = path.join(__dirname, "../../static/mongo_file/", file_name)
 
                             var data = fs.readFileSync(file_path)
 

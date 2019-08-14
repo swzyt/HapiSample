@@ -1,7 +1,8 @@
+const path = require('path');
 const download = require('images-downloader').images;
 
 var Bagpipe = require('bagpipe');
-var bagpipe = new Bagpipe(10);
+var bagpipe = new Bagpipe(2);
 bagpipe.on('full', function (length) {
     console.warn('插入新的下载队列，当前队列长度为:' + length);
 });
@@ -9,6 +10,7 @@ bagpipe.on('full', function (length) {
 const dirUtil = require("./dir")
 
 const download_handle = (images, dest) => {
+    dest = path.join(__dirname, '../static/', dest);
     let _path = dirUtil.checkDirExist(dest)
     if (_path) {
         download(images, _path)

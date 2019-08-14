@@ -1,8 +1,11 @@
-var fs = require("fs");
-var mongodb = require('mongodb');
+const fs = require("fs");
+const mongodb = require('mongodb');
+const path = require('path');
 var MongoClient = mongodb.MongoClient;
 var settings = require("../settings");
 var dbUrl = settings.mongodb.url;
+
+const dirUtil = require("../utils/dir")
 
 function connectDb(callback) {
     MongoClient.connect(dbUrl, function (err, db) {
@@ -68,12 +71,16 @@ exports.downloadFile = function (dbname, file_name, callback) {
         self.findOne(settings.mongodb.dbname, `${settings.mongodb.tableName_upload_file}.files`, { filename: file_name }, (err, file_attr) => {
             if (err || !file_attr) return callback("获取文件失败");
 
+            let temp_path = dirUtil.checkDirExist(path.join(__dirname, "../static/mongo_file/"))
+
+            let file_path = path.join(temp_path, file_name)
+
             var bucket = new mongodb.GridFSBucket(DB, {
                 chunkSizeBytes: 1024,
                 bucketName: settings.mongodb.tableName_upload_file
             });
             bucket.openDownloadStreamByName(file_name).
-                pipe(fs.createWriteStream(`./static/mongo_file/${file_name}`)).
+                pipe(fs.createWriteStream(file_path)).
                 on('error', function (error) {
                     return callback(error)
                 }).

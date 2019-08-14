@@ -48,7 +48,7 @@ const getAnswers = (offset) => {
                 let answer_img = $("img");
                 answer_img.map(async (img_index, img_item) => {
                     if (img_item.attribs && img_item.attribs.src && (img_item.attribs.src.indexOf("https://pic") > -1 || img_item.attribs.src.indexOf("http://pic") > -1)) {
-                        download_img([img_item.attribs.src], `/zhihu/img/Q_${QUESTION_ID}/A_${item.id}/`)
+                        download_img([img_item.attribs.src], `/zhihu/Q_${QUESTION_ID}/A_${item.id}/`)
                     }
                 })
             })
