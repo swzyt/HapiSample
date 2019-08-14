@@ -287,6 +287,7 @@ class TaskMgr {
             // 定时器，触发启动全部任务
             setTimeout(async function () {
 
+                // 获取当前进程数
                 await self.db.cache.client.setAsync(RedisTaskProcessCount, await self.db.cache.client.llenAsync(RedisTaskHostProcess))
 
                 await self.delRedis(RedisTaskHostProcess);
@@ -296,6 +297,9 @@ class TaskMgr {
                 await self.startAll();
 
             }, TimeOut_StartAll);
+
+            // 设置Redis任务进程KEY在定时启动后N秒自动过期
+            self.db.cache.client.expireAsync(RedisTaskHostProcess, (TimeOut_StartAll / 1000) + 3);
         }
     }
 
