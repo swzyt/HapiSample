@@ -51,10 +51,13 @@ const TaskLogType = {
 // 定时器配置
 
 /**默认N秒后，启动全部任务 */
-const TimeOut_StartAll = 1000 * 15;
+const TimeOut_StartAll = 1000 * 60;
 
-/**默认每N秒，同步任务进程表 */
-const Interval_SyncTaskProcess = 1000 * 10;
+/**默认每N秒，检测并同步任务进程表 */
+const Interval_SyncTaskProcess = 1000 * 15;
+
+/**检测并同步任务进程表定时器启动标志 */
+var Interval_SyncTaskProcess_Sign;
 
 
 /**获取主机名 */
@@ -293,13 +296,6 @@ class TaskMgr {
                 await self.startAll();
 
             }, TimeOut_StartAll);
-
-            //循环任务，每N秒检测任务进程合理性，并同步任务进程表
-            setInterval(async function () {
-                await self.checkTaskProcess();
-
-                await self.syncTaskProcess();
-            }, Interval_SyncTaskProcess)
         }
     }
 
@@ -377,6 +373,15 @@ class TaskMgr {
     async startAll() {
         let self = this;
 
+        //清除自动同步任务进程表定时器
+        Interval_SyncTaskProcess_Sign && clearInterval(Interval_SyncTaskProcess_Sign);
+        //循环任务，每N秒检测任务进程合理性，并同步任务进程表
+        Interval_SyncTaskProcess_Sign = setInterval(async function () {
+            await self.checkTaskProcess();
+
+            await self.syncTaskProcess();
+        }, Interval_SyncTaskProcess);
+
         let keys = await self.db.cache.client.keysAsync(`${RedisTaskListKeyPrefix}*`);
 
         if (keys && keys.length > 0) {
@@ -430,6 +435,9 @@ class TaskMgr {
     /**停止当前进程全部任务 */
     async _stopAll() {
         let self = this;
+
+        //清除自动同步任务进程表定时器
+        Interval_SyncTaskProcess_Sign && clearInterval(Interval_SyncTaskProcess_Sign);
 
         Object.keys(self.task_list).map(task_id => {
             // 遍历当前进程运行的任务，并全部取消
