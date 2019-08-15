@@ -52,6 +52,7 @@
     "mysql2": "^1.6.5",
     "nconf": "^0.10.0",
     "node-schedule": "^1.3.2",
+    "ps-node": "^0.1.6",
     "redis": "^2.8.0",
     "request": "^2.88.0",
     "require-directory": "^2.1.1",

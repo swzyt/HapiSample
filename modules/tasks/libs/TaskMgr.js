@@ -3,7 +3,8 @@ const schedule = require("node-schedule"),
     moment = require("moment"),
     restler = require("./restler"),
     Bagpipe = require('bagpipe'),
-    os = require("os");
+    os = require("os"),
+    ps = require('ps-node');
 
 
 // Redis 配置
@@ -63,6 +64,49 @@ var Interval_SyncTaskProcess_Sign;
 /**获取主机名 */
 function _getHostName() {
     return os.hostname();
+}
+
+/**获取当前主机中指定名称的进程列表 */
+async function getHostProcessList() {
+    let process_name = 'node',
+        process_list = [];
+
+    let cmd = process.platform == 'win32' ? 'tasklist' : 'ps aux';
+    let exec = require('child_process').exec;
+
+    return new Promise((resolve, reject) => {
+        exec(cmd, function (err, stdout, stderr) {
+            if (err) { console.log(err); reject(err) }
+
+            stdout.split('\n').filter(function (line) {
+                var p = line.trim().split(/\s+/), pname = p[0], pid = p[1];
+                if (pname.toLowerCase().indexOf(process_name) >= 0 && parseInt(pid)) {
+                    console.log(pname, pid);
+
+                    process_list.push(pid);
+                }
+            });
+
+            resolve(process_list)
+        });
+    })
+}
+
+/**比对redis中当前主机的进程是否为运行状态，若不是，则删除 */
+async function checkProcessList(db) {
+    let redis_process_length = await db.cache.client.llenAsync(RedisTaskHostProcess);
+
+    if (redis_process_length) {
+        let redis_process_list = await db.cache.client.lrangeAsync(RedisTaskHostProcess, 0, redis_process_length),
+            host_process_list = await getHostProcessList();
+
+        for (let i = 0; i < redis_process_list.length; i++) {
+            let item = JSON.parse(redis_process_list[i]);
+            if (item.host == _getHostName() && _.indexOf(host_process_list, item.pid) == -1) {
+                await db.cache.client.lremAsync(RedisTaskHostProcess, 0, redis_process_list[i]);
+            }
+        }
+    }
 }
 
 class TaskMgr {
@@ -275,14 +319,19 @@ class TaskMgr {
     async initFirstProcess() {
         let self = this;
 
-        let redis_value = `${_getHostName()}:${process.pid}`
-        await self.db.cache.client.rpushAsync(RedisTaskHostProcess, redis_value);
+        // await checkProcessList(self.db);
+
+        let redis_item = JSON.stringify({
+            host: _getHostName(),
+            pid: process.pid
+        });
+        await self.db.cache.client.rpushAsync(RedisTaskHostProcess, redis_item);
 
         let first_item = await self.db.cache.client.lindexAsync(RedisTaskHostProcess, 0);
 
         // 判断当前进程是否为第一个运行的进程，若是，则执行定时操作
-        if (first_item == redis_value) {
-            console.log(`The First Process Running! ${redis_value}`)
+        if (first_item == redis_item) {
+            console.log(`The First Process Running! ${redis_item}`)
 
             // 定时器，触发启动全部任务
             setTimeout(async function () {
@@ -666,6 +715,26 @@ class TaskMgr {
         })
     }
 }
+
+/* ps.lookup({
+    command: 'node',
+    pid: 24476
+}, function (err, resultList) {
+    if (err) {
+        throw new Error(err);
+    }
+
+    var process = resultList[0];
+
+    if (process) {
+
+        console.log('PID: %s, COMMAND: %s, ARGUMENTS: %s', process.pid, process.command, process.arguments);
+    }
+    else {
+        console.log('No such process found!');
+    }
+}); */
+
 
 module.exports = function (db) {
     return new TaskMgr(db);
