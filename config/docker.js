@@ -95,7 +95,7 @@ module.exports = {
         "username": "root",
         "password": "123456",
         "options": {
-            "host": "local-mysql-master",
+            "host": "mysql-master",
             "port": 3306,
             "dialect": "mysql",
             "logging": true,

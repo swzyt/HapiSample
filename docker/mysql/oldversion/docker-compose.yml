@@ -1,0 +1,46 @@
+version: "3"
+
+services:
+
+  mysql-master:
+    image: mysql:5.7
+    container_name: mysql-master
+    ports:
+      - 3306:3306
+    volumes:
+      - /D/WorkSpace/Framework/HapiSample/docker/mysql/master/other:/var/lib/mysql
+      - /D/WorkSpace/Framework/HapiSample/docker/mysql/master/config/mysqld.conf:/etc/mysql/mysql.conf.d/mysqld.cnf
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: Test
+      MYSQL_USER: testadmin
+      MYSQL_PASSWORD: "123456"
+    restart: always
+    networks:
+      mysql-ms-network:
+        ipv4_address: 172.25.0.101
+
+  mysql-slave:
+    image: mysql:5.7
+    container_name: mysql-slave
+    ports:
+      - 33006:3306
+    volumes:
+      - /D/WorkSpace/Framework/HapiSample/docker/mysql/slave/other:/var/lib/mysql
+      - /D/WorkSpace/Framework/HapiSample/docker/mysql/slave/config/mysqld.conf:/etc/mysql/mysql.conf.d/mysqld.cnf
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: Test
+      MYSQL_USER: testadmin
+      MYSQL_PASSWORD: "123456"
+    restart: always
+    networks:
+      mysql-ms-network:
+        ipv4_address: 172.25.0.102
+
+networks:
+  mysql-ms-network:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.25.0.0/24

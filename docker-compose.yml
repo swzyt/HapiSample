@@ -16,7 +16,7 @@ services:
     networks:
       - local-comnet
       - local-redis-network
-      - local-mysql-ms-network
+      - mysql-ms-network
       - local-rabbitmq-ms-network
       - local-mongo-ms-network
     
@@ -36,7 +36,7 @@ services:
       - local-redis
 
       # 连接现有mysql容器
-      - local-mysql-master
+      - mysql-master
 
       # 连接现有rabbit容器
       - local-rabbitmq1
@@ -63,9 +63,9 @@ networks:
       name: redis_local-redis-ms-network
 
   # 引用现有mysql集群网络
-  local-mysql-ms-network:
+  mysql-ms-network:
     external:
-      name: mysql_local-mysql-ms-network
+      name: mysql_mysql-ms-network
 
   # 引用现有rabbit集群网络
   local-rabbitmq-ms-network:
