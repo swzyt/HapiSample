@@ -93,7 +93,7 @@ module.exports = {
     "mysql": {
         "database": "Test",
         "username": "root",
-        "password": "123456",
+        "password": "root",
         "options": {
             "host": "localhost",
             "port": 3306,

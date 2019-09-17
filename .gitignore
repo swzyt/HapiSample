@@ -9,7 +9,8 @@ OldCode
 
 package-lock.json
 
-docker/mysql/master/other/
-docker/mysql/slave/other/
+docker/mysql/data/
+docker/portainer/data/
+docker/portainer/run/
 docker/redis/data/
 docker/mongo/data/

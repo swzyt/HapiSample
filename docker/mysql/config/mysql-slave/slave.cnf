@@ -7,6 +7,7 @@ read_only=1
 
 skip-host-cache
 skip-name-resolve
+#skip-grant-
 
 #general-log=ON
 general-log-file=/var/lib/mysql/query.log

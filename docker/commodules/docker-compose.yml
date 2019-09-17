@@ -6,7 +6,7 @@ services:
   commodules:
     container_name: commodules
     build: .
-    image: commodules:v2
+    image: commodules:v1
     # command: npm install
     # volumes:
     #   - local-com-package:/home/app/api/share/modules
@@ -21,4 +21,4 @@ services:
 #   # 引用外部api网络
 #   local-comnet:
 #     external:
-#       name: hapisimple_local-comnet
+#       name: hapisample_local-comnet

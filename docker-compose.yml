@@ -50,7 +50,10 @@ services:
       # - local-mongo
       # - local-rabbitmq1
     ports:
-      - 8888:8888
+      - 8880:8880
+      - 8881:8881
+      - 8882:8882
+      - 8883:8883
     environment: #environment 和 Dockerfile 中的 ENV 指令一样会把变量一直保存在镜像、容器中，类似 docker run -e 的效果。设置容器的环境变量
       - TZ=Asia/Shanghai    
     restart: always

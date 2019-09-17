@@ -8,6 +8,7 @@ binlog-format="mixed"
 
 skip-host-cache
 skip-name-resolve
+#skip-grant-tables
 
 # long_query_time=2
 # slow-query-log=ON

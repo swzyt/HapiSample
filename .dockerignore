@@ -8,8 +8,14 @@ README.md
 .vscode
 OldCode
 package-lock.json
+static
 
-docker/mysql/master/other/
-docker/mysql/slave/other/
+docker/mysql/data/
+docker/portainer/data/
+docker/portainer/run/
 docker/redis/data/
 docker/mongo/data/
+
+modules/auth/node_modules/
+modules/storage/node_modules/
+modules/tasks/node_modules/
