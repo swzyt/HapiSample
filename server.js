@@ -1,8 +1,9 @@
 // const Hapi = require('hapi');
-const Hapi = require('@hapi/hapi');
-const _ = require('lodash');
-const { moment, getNow, getDiff } = require("./utils/moment");
-const api_log_server = require("./libs/api_logs");
+const Hapi = require('@hapi/hapi'),
+    _ = require('lodash'),
+    { moment, getNow, getDiff } = require("./utils/moment"),
+    api_log_server = require("./libs/api_logs"),
+    jwt_token = require("./libs/jwt/index");
 
 module.exports = function (settings, bootstrap) {
 
@@ -86,7 +87,9 @@ module.exports = function (settings, bootstrap) {
     Server.register(pluginsArray);
 
     //jwt认证自定义方法
-    var validate = function (decoded, request, h) {
+    var validate = async function (decoded, request, h) {
+        //decoded实为token的guid
+
         // var validate = function () {
         // console.log(arguments);
         // return true;
@@ -96,7 +99,9 @@ module.exports = function (settings, bootstrap) {
 
         //可根据来源域名判断是否需要检测接口请求人，例如，api文档内的请求只判断有效期
 
-        return { isValid: decoded.expiresAt > new Date().getTime() };
+        let userData = await jwt_token.getToken(decoded);
+
+        return { isValid: userData && userData.token.expires_at > new Date().getTime() };
     };
     Server.auth.strategy('jwt', 'jwt',
         {

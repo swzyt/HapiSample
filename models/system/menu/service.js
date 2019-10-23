@@ -143,7 +143,11 @@ Service.prototype.menu_treelist_full = function (where) {
     return this.db.SystemMenu.findAll(options).then(menu_list => {
         menu_list = JSON.parse(JSON.stringify(menu_list));
         return menu_list.map(item => {
-            let authority = item.roles ? [...new Set(item.roles.map(x => { return x.role_id }))] : null
+            let authority = item.roles ? [...new Set(item.roles
+                .filter(x => { return x && x.role_id })
+                .map(x => { return x.role_id })
+            )] : null
+            console.log(authority)
             return {
                 key: item.menu_id,//此处添加key字段，源于前端table组件显示树列表无此键值，会报错
                 authority,
