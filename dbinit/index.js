@@ -1,5 +1,29 @@
 module.exports = function (db) {
     let system_menus = [{
+        menu_id: '10',
+        name: '收费管理',
+        path: '/netpay',
+        component: '',
+        icon: 'setting',
+        description: '收费管理',
+        valid: true,
+        is_show: true,
+        sort: 0,
+        target: '',
+        parent_id: ''
+    }, {
+        menu_id: '11',
+        name: '项目列表',
+        path: '/netpay/projects',
+        component: "./NetPat/Project/List",
+        icon: 'appstore',
+        description: '项目列表',
+        valid: true,
+        is_show: true,
+        sort: 1,
+        target: '',
+        parent_id: '10'
+    },{
         menu_id: '1',
         name: '系统管理',
         path: '/system',

@@ -20,6 +20,9 @@ module.exports = {
                 },
                 tags: [
                     { "name": "auth", "description": "身份验证", externalDocs: { description: '身份验证', url: 'http://localhost:8887' } },
+                    { "name": "netpay-project", "description": "网费-项目" },
+                    { "name": "netpay-building", "description": "网费-楼栋" },
+                    { "name": "netpay-room", "description": "网费-房间" },
                     { "name": "system-app", "description": "系统-app" },
                     { "name": "system-menu", "description": "系统-菜单" },
                     { "name": "system-button", "description": "系统-按钮" },
