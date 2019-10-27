@@ -65,6 +65,15 @@ module.exports = {
                 tags: [
                     { "name": "storage", "description": "文件存储服务" },
                 ]
+            },
+            file_options: {
+                mongodb: {
+                    allow: true
+                },
+                local: {
+                    allow: true,
+                    dir: "../../static/upload_file/"
+                }
             }
         },
         tasks: {

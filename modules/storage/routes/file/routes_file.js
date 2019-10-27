@@ -5,8 +5,12 @@ var multiparty = require('multiparty');
 var Guid = require('guid');
 var fs = require('fs');
 var path = require('path');
-var mongodb = require("../../libs/mongodb")
-var settings = require("../../settings")
+var mongodb = require("../../libs/mongodb");
+var settings = require("../../settings");
+const dirUtil = require("../../utils/dir");
+
+var file_options = settings.modules.storage.file_options;
+var static_file_path = dirUtil.checkDirExist(path.join(__dirname, file_options.local.dir));
 
 module.exports = function (server, models) {
 
@@ -57,95 +61,94 @@ module.exports = function (server, models) {
                     output: 'stream',
                     parse: false
                 },
-                handler: function (request, h) {
+                handler: async function (request, h) {
 
                     var form = new multiparty.Form();
+                    //先设置文件上传临时目录
+                    form.uploadDir = static_file_path;
 
-                    var file_count = 0, upload_result = [];
+                    return new Promise(async (resolve, reject) => {
+                        form.parse(request.payload, async function (err, form_fields, form_files) {
+                            if (err) return reject(Boom.badRequest(err));
 
-                    /**
-                     * 检测客户端上传的文件是否全部保存至mongodb
-                     * @param {*} resolve 
-                     */
-                    function check_upload_result(resolve) {
-                        if (file_count == upload_result.length)
-                            return resolve(upload_result)
-                    }
-
-                    return new Promise((resolve, reject) => {
-                        form.parse(request.payload, function (err, form_fields, form_files) {
-                            if (err) return reject(h.error(Boom.badRequest(err)));
-
-                            if (Object.keys(form_files).length == 0) return reject(h.error(Boom.badRequest("表单内未检测到文件")))
-
-                            //计算有效文件总数量
-                            Object.keys(form_files).map((files_key, files_index) => {
-                                //file_count += form_files[files_key].length
-                                file_count += form_files[files_key].filter((file_item, files_index) => {
-                                    return file_item.originalFilename && file_item.originalFilename.length > 0
-                                }).length
+                            //自定义属性处理
+                            Object.keys(form_fields).map((field_key) => {
+                                form_fields[field_key] = form_fields[field_key] ? form_fields[field_key].join(',') : '';
                             })
 
-                            //遍历上传文件
-                            Object.keys(form_files).map((files_key, files_index) => {
-
-                                form_files[files_key].forEach((file_item, file_index) => {
-                                    //有效文件
-                                    if (file_item.originalFilename) {
-                                        //生成新的文件名
-                                        var new_filename = Guid.create() + path.extname(file_item.path);
-
-                                        //其他属性设置
-                                        let options = {
-                                            filename: new_filename,
-                                            contentType: file_item.headers['content-type'],
+                            //获取待上传的文件列表
+                            let valid_files = [];
+                            Object.keys(form_files).map(x => {
+                                let valid_file = form_files[x]
+                                    .filter(y => {
+                                        return y.originalFilename && y.path;
+                                    })
+                                    .map(z => {
+                                        return {
+                                            new_file_name: Guid.create() + path.extname(z.path),
+                                            temp_path: z.path,
+                                            //元数据字段名不要改动
+                                            filename: z.originalFilename,
+                                            contentType: z.headers['content-type'],
                                             metadata: {
-                                                filename: file_item.originalFilename,//保存旧文件名
-                                                extname: path.extname(file_item.path),//文件扩展名
+                                                filename: z.originalFilename,//旧文件名
+                                                extname: path.extname(z.path),//文件扩展名
+                                                ...form_fields//自定义属性
                                             }
-                                        };
-                                        Object.keys(form_fields).map((field_key) => {
-                                            options.metadata[field_key] = form_fields[field_key] ? form_fields[field_key].join(',') : '';
-                                        })
-
-                                        //此处保存至mongodb
-                                        mongodb.insertFile(settings.mongodb.dbname, file_item.path, new_filename, options, (err, result) => {
-                                            //保存失败
-                                            if (err) {
-                                                //upload_result.push(err)
-
-                                                return check_upload_result(resolve);
-                                            }
-                                            //保存成功
-                                            else {
-                                                upload_result.push(options)
-
-                                                return check_upload_result(resolve);
-                                            }
-                                        })
-
-                                    }
-                                    //无效文件
-                                    else {
-                                        //upload_result.push({ msg: "此处无有效文件" })
-
-                                        return check_upload_result(resolve);
-                                    }
-                                })
-
+                                        }
+                                    });
+                                valid_files = [
+                                    ...valid_files,
+                                    ...valid_file
+                                ]
                             });
+
+                            if (!valid_files || valid_files.length == 0) {
+                                return reject(Boom.badRequest("表单内未检测到文件"));
+                            }
+
+                            //批量上传文件
+                            for (let i = 0; i < valid_files.length; i++) {
+                                let item = valid_files[i];
+
+                                //保存在mongodb
+                                if (file_options.mongodb.allow) {
+
+                                    let upload_result = await upload_file_to_mongodb(item.temp_path, item.new_file_name, item);
+
+                                    item.mongo_success = !!!(upload_result.err);
+                                    item.mongo_result = upload_result.result;
+                                }
+
+                                //保存在本地
+                                if (file_options.local.allow) {
+                                    let upload_result = fs.renameSync(item.temp_path, path.join(static_file_path, item.new_file_name));
+                                    item.local_success = !!!upload_result;
+                                    item.local_result = upload_result;
+                                }
+                            }
+
+                            resolve(valid_files);
                         });
                     })
+
+                    function upload_file_to_mongodb(temp_path, new_file_name, options) {
+                        return new Promise((resolve, reject) => {
+                            mongodb.insertFile(settings.mongodb.dbname, temp_path, new_file_name, options, (err, result) => {
+                                resolve({ err, result });
+                            })
+                        })
+                    }
                 }
             }
         }, {
             method: 'GET',
-            path: '/storage/files/{file_name}',
+            path: '/storage/mongo_files/{file_name}',
             config: {
                 auth: false,
                 tags: ['api', 'storage'],
-                description: '获取指定标识的文件',
-                notes: 'My route notes',
+                description: '获取mongodb指定标识的文件',
+                notes: '获取mongodb指定标识的文件',
                 validate: {
                     params: {
                         file_name: Joi.string().required().description('文件名（guid）')
@@ -172,7 +175,10 @@ module.exports = function (server, models) {
                                 h.response(data)
                                     .type(file_attr.contentType)
                                     .header('Cache-Control', 'public, max-age=86400, no-transform')
-                                //.header('filename', file_attr.metadata.filename)
+                                    ////指定下载名
+                                    .header('filename', file_attr.metadata.filename)
+                                    .header('Content-Disposition', 'attachment; filename=' + file_attr.metadata.filename)
+                                    .header('Content-Length', file_attr.length)
                                 /**
                                  * res.set({
                                     'Content-Type': 'application/octet-stream', //告诉浏览器这是一个二进制文件
@@ -183,6 +189,26 @@ module.exports = function (server, models) {
                         })
                     })
 
+                }
+            }
+        }, {
+            method: 'GET',
+            path: '/storage/local_files/{file_name}',
+            config: {
+                auth: false,
+                tags: ['api', 'storage'],
+                description: '获取本地指定标识的文件',
+                notes: '获取本地指定标识的文件',
+                validate: {
+                    params: {
+                        file_name: Joi.string().required().description('文件名（guid）')
+                    }
+                },
+                handler: function (request, h) {
+                    //生成静态文件路径
+                    let file_name = path.join(static_file_path, request.params.file_name);
+
+                    return h.file(file_name);
                 }
             }
         }

@@ -3,7 +3,8 @@ const Hapi = require('@hapi/hapi'),
     _ = require('lodash'),
     { moment, getNow, getDiff } = require("./utils/moment"),
     api_log_server = require("./libs/api_logs"),
-    jwt_token = require("./libs/jwt/index");
+    jwt_token = require("./libs/jwt/index"),
+    path = require('path');
 
 module.exports = function (settings, bootstrap) {
 
@@ -14,7 +15,10 @@ module.exports = function (settings, bootstrap) {
             cors: {
                 origin: ['*'],//跨域
                 //additionalHeaders: ["Accept-Language", "Corporation-Id", "U", "T", "Sign"]
-            }
+            },
+            // files: {
+            //     relativeTo: path.join(__dirname, 'static')
+            // }
         }
     });
 

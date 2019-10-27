@@ -43,6 +43,8 @@ echo "libs"
 mkdir libs
 mkdir libs\api_logs
 mklink libs\api_logs\index.js /H ..\..\libs\api_logs\index.js
+mkdir libs\jwt
+mklink libs\jwt\index.js /H ..\..\libs\jwt\index.js
 mklink libs\cache.js /H ..\..\libs\cache.js
 mklink libs\db.js /H ..\..\libs\db.js
 mklink libs\defaultModel.js /H ..\..\libs\defaultModel.js
