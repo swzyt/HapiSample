@@ -18,6 +18,7 @@ var Service = function (db) {
 Service.prototype.list = function (where, page_size, page_number, orderArr) {
 
     var options = {
+        distinct: true,
         attributes: this.attributes,
         include: this.include,
         where: where,
