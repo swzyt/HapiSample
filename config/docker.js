@@ -23,6 +23,7 @@ module.exports = {
                     { "name": "netpay-project", "description": "网络付费-项目" },
                     { "name": "netpay-building", "description": "网络付费-楼栋" },
                     { "name": "netpay-room", "description": "网络付费-房间" },
+                    { "name": "netpay-operator", "description": "网络付费-运营商" },
                     { "name": "netpay-product", "description": "网络付费-产品" },
                     { "name": "netpay-discount", "description": "网络付费-折扣" },
                     { "name": "system-app", "description": "系统-app" },
