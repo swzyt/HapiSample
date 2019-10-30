@@ -52,6 +52,10 @@ module.exports = function (sequelize, DataTypes) {
         },
         classMethods: {
             associate: function (models) {
+                NetPayDiscount.hasMany(models.NetPayProduct, {
+                    as: "products",
+                    foreignKey: 'discount_id'
+                });
             }
         }
     });

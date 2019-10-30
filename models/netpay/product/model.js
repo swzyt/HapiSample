@@ -95,6 +95,14 @@ module.exports = function (sequelize, DataTypes) {
         },
         classMethods: {
             associate: function (models) {
+                NetPayProduct.hasMany(models.NetPayProductProject, {
+                    as: "projects",
+                    foreignKey: 'product_id'
+                });
+                NetPayProduct.belongsTo(models.NetPayDiscount, {
+                    as: "discount",
+                    foreignKey: 'discount_id'
+                });
             }
         }
     });

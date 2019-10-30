@@ -56,7 +56,7 @@ Service.prototype.create = function (data) {
                     return item;
                 })
             )
-            self.db.SystemRolePermission.bulkCreate(role_permissions_data);
+            role_permissions_data && self.db.SystemRolePermission.bulkCreate(role_permissions_data);
         }
 
         return result

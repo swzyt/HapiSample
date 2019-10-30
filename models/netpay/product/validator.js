@@ -13,19 +13,23 @@ var RequestModel = {
     banner_imgs: Joi.string().allow(['', null]).description('banner图'),
     poster_bg_url: Joi.string().allow(['', null]).description('海报背景图'),
 
-    begin_valid_time: Joi.date().description('有效开始时间'),
-    end_valid_time: Joi.date().description('有效结束时间'),
+    begin_valid_time: Joi.date().optional().description('有效开始时间'),
+    end_valid_time: Joi.date().optional().description('有效结束时间'),
 
     unit_name: Joi.string().allow(['', null]).description('单位描述'),
     description: Joi.string().allow(['', null]).description('描述'),
     valid: Joi.boolean().allow(['', null]).description('是否有效'),
 
-    base_price: Joi.number().required().description('底价'),
-    mark_price: Joi.number().required().description('标价'),
-    installation_fee: Joi.number().required().description('安装费'),
-    optical_modem_deposit: Joi.number().required().description('光猫押金'),
-    operator_cost: Joi.number().required().description('运营商成本'),
-    owner_sharing: Joi.number().required().description('业主分成'),
+    base_price: Joi.number().optional().description('底价'),
+    mark_price: Joi.number().optional().description('标价'),
+    installation_fee: Joi.number().optional().description('安装费'),
+    optical_modem_deposit: Joi.number().optional().description('光猫押金'),
+    operator_cost: Joi.number().optional().description('运营商成本'),
+    owner_sharing: Joi.number().optional().description('业主分成'),
+
+    discount_id: Joi.number().integer().allow(null).description('关联折扣标识'),
+
+    projects: Joi.array().optional().description('关联项目'),
 };
 
 var ResponseModel = {
@@ -53,6 +57,11 @@ var ResponseModel = {
 
     created_at: Joi.date().description('创建时间'),
     updated_at: Joi.date().description('更新时间'),
+
+    discount_id: Joi.number().integer().allow(null).description('关联折扣标识'),
+    discount: Joi.object().allow(null).description('关联折扣对象'),
+
+    projects: Joi.array().required().description('关联项目'),
 
     // buildings: Joi.array().allow([null, []]).description("楼栋"),
 };
