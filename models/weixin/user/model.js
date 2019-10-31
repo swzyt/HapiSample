@@ -1,6 +1,6 @@
 'use strict';
 module.exports = function (sequelize, DataTypes) {
-    const WeiXinUser = sequelize.define('WeiXinUser', {
+    const WeixinUser = sequelize.define('WeixinUser', {
         wx_user_id: {
             type: DataTypes.INTEGER(14),
             autoIncrement: true,
@@ -31,14 +31,6 @@ module.exports = function (sequelize, DataTypes) {
         avatar_url: {
             type: DataTypes.STRING(180)
         },
-        union_id: {
-            type: DataTypes.STRING(50),
-            comment: "只有在用户将公众号绑定到微信开放平台帐号后，才会出现该字段"
-        },
-        mobile: {
-            type: DataTypes.STRING(50),
-            comment: "微信手机号"
-        },
         remark: {
             type: DataTypes.STRING(180)
         },
@@ -55,5 +47,5 @@ module.exports = function (sequelize, DataTypes) {
         }
     });
 
-    return WeiXinUser;
+    return WeixinUser;
 };
